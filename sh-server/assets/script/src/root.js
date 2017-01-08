@@ -22,6 +22,8 @@ class Root extends React.Component {
     this._client = new Client();
     this._client.onOverview = this.gotSceneData.bind(this, 'overview');
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
+    this._client.onFullLog = this.gotSceneData.bind(this, 'fullLog');
+    this._client.onSettings = this.gotSceneData.bind(this, 'settings');
 
     window.onpopstate = (e) => {
       this.setState(e.state, () => this.fetchPageData());
@@ -37,7 +39,10 @@ class Root extends React.Component {
   render() {
     return (
       <div>
-        <NavBar page={this.state.page} />
+        <NavBar page={this.state.page}
+                onOverview={() => this.showTab('overview')}
+                onFullLog={() => this.showTab('fullLog')}
+                onSettings={() => this.showTab('settings')} />
         {this.pageContent()}
       </div>
     );
@@ -49,13 +54,11 @@ class Root extends React.Component {
       return <LogScene info={this.state.overview}
                     onClick={(e) => this.showServiceLog(e)} />;
     case 'fullLog':
-      // TODO: this.
-      break;
+      return <LogScene info={this.state.fullLog} />;
     case 'serviceLog':
       return <LogScene info={this.state.serviceLog} />;
     case 'settings':
-      // TODO: this.
-      break;
+      return <Settings info={this.state.settings} />;
     }
     throw new Error('unsupported page: ' + this.state.page);
   }
@@ -95,10 +98,23 @@ class Root extends React.Component {
       page: 'serviceLog',
       serviceLog: {error: null, entries: null},
       serviceLogReq: info.serviceName
-    }, () => {
-      this.pushHistory();
-      this.fetchPageData();
-    });
+    }, () => this.pushAndFetch());
+  }
+
+  showTab(name) {
+    if (this.state.page == name) {
+      return;
+    }
+    var s = {page: name};
+    if (this.state[name].error) {
+      s[name] = {error: null, entries: null};
+    }
+    this.setState(s, () => this.pushAndFetch());
+  }
+
+  pushAndFetch() {
+    this.pushHistory();
+    this.fetchPageData();
   }
 
   pushHistory() {
@@ -111,7 +127,7 @@ class Root extends React.Component {
 
   pageHash() {
     if (this.state.page === 'overview') {
-      return '';
+      return '#';
     }
     return '#' + this.state.page;
   }

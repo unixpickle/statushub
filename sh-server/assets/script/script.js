@@ -22,6 +22,8 @@ class Root extends React.Component {
     this._client = new Client();
     this._client.onOverview = this.gotSceneData.bind(this, 'overview');
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
+    this._client.onFullLog = this.gotSceneData.bind(this, 'fullLog');
+    this._client.onSettings = this.gotSceneData.bind(this, 'settings');
 
     window.onpopstate = e => {
       this.setState(e.state, () => this.fetchPageData());
@@ -38,7 +40,10 @@ class Root extends React.Component {
     return React.createElement(
       'div',
       null,
-      React.createElement(NavBar, { page: this.state.page }),
+      React.createElement(NavBar, { page: this.state.page,
+        onOverview: () => this.showTab('overview'),
+        onFullLog: () => this.showTab('fullLog'),
+        onSettings: () => this.showTab('settings') }),
       this.pageContent()
     );
   }
@@ -49,13 +54,11 @@ class Root extends React.Component {
         return React.createElement(LogScene, { info: this.state.overview,
           onClick: e => this.showServiceLog(e) });
       case 'fullLog':
-        // TODO: this.
-        break;
+        return React.createElement(LogScene, { info: this.state.fullLog });
       case 'serviceLog':
         return React.createElement(LogScene, { info: this.state.serviceLog });
       case 'settings':
-        // TODO: this.
-        break;
+        return React.createElement(Settings, { info: this.state.settings });
     }
     throw new Error('unsupported page: ' + this.state.page);
   }
@@ -95,10 +98,23 @@ class Root extends React.Component {
       page: 'serviceLog',
       serviceLog: { error: null, entries: null },
       serviceLogReq: info.serviceName
-    }, () => {
-      this.pushHistory();
-      this.fetchPageData();
-    });
+    }, () => this.pushAndFetch());
+  }
+
+  showTab(name) {
+    if (this.state.page == name) {
+      return;
+    }
+    var s = { page: name };
+    if (this.state[name].error) {
+      s[name] = { error: null, entries: null };
+    }
+    this.setState(s, () => this.pushAndFetch());
+  }
+
+  pushAndFetch() {
+    this.pushHistory();
+    this.fetchPageData();
   }
 
   pushHistory() {
@@ -111,7 +127,7 @@ class Root extends React.Component {
 
   pageHash() {
     if (this.state.page === 'overview') {
-      return '';
+      return '#';
     }
     return '#' + this.state.page;
   }
@@ -129,8 +145,7 @@ window.addEventListener('load', function () {
 });
 class Client {
   constructor() {
-    this.onOverview = function () {};
-    this.onServiceLog = function () {};
+    this.close();
   }
 
   fetchOverview() {
@@ -146,15 +161,24 @@ class Client {
   }
 
   fetchSettings() {
-    // TODO: this.
+    setTimeout(() => {
+      this.onSettings(null, {
+        maxLog: 1000
+      });
+    });
   }
 
   fetchFullLog() {
-    // TODO: this.
+    setTimeout(() => {
+      this.onFullLog('network failure', null);
+    }, 1000);
   }
 
   close() {
     this.onOverview = function () {};
+    this.onServiceLog = function () {};
+    this.onFullLog = function () {};
+    this.onSettings = function () {};
   }
 }
 function Loader(props) {
@@ -243,4 +267,11 @@ function VoidLink(props) {
       props.name
     );
   }
+}
+function Settings(props) {
+  return React.createElement(
+    'div',
+    { className: 'pane' },
+    'Settings here'
+  );
 }

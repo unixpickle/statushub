@@ -1,7 +1,6 @@
 class Client {
   constructor() {
-    this.onOverview = function() {};
-    this.onServiceLog = function() {};
+    this.close();
   }
 
   fetchOverview() {
@@ -24,14 +23,23 @@ class Client {
   }
 
   fetchSettings() {
-    // TODO: this.
+    setTimeout(() => {
+      this.onSettings(null, {
+        maxLog: 1000
+      });
+    });
   }
 
   fetchFullLog() {
-    // TODO: this.
+    setTimeout(() => {
+      this.onFullLog('network failure', null);
+    }, 1000);
   }
 
   close() {
     this.onOverview = function() {};
+    this.onServiceLog = function() {};
+    this.onFullLog = function() {};
+    this.onSettings = function() {};
   }
 }
