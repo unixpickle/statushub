@@ -27,6 +27,10 @@ class Root extends React.Component {
     this._client.close();
   }
 
+  showServiceLog(id) {
+    console.log('got ID: ' + id);
+  }
+
   render() {
     return React.createElement(
       'div',
@@ -39,7 +43,7 @@ class Root extends React.Component {
   pageContent() {
     switch (this.state.page) {
       case 'overview':
-        return React.createElement(Overview, { info: this.state.overview });
+        return React.createElement(Overview, { info: this.state.overview, onClick: id => this.showServiceLog(id) });
       case 'fullLog':
         // TODO: this.
         break;
@@ -58,6 +62,14 @@ window.addEventListener('load', function () {
   ReactDOM.render(React.createElement(Root, null), document.getElementById('root'));
 });
 class Client {
+  constructor() {
+    this.onOverview = function () {};
+
+    setTimeout(() => {
+      this.onOverview(null, [{ serviceName: 'FooService', id: 0, message: 'deleting /foo/bar' }, { serviceName: 'NetService', id: 1, message: 'Current cost: 0.05' }, { serviceName: 'NetService1', id: 2, message: 'Current cost: 0.92' }]);
+    }, 1000);
+  }
+
   close() {
     this.onOverview = function () {};
   }
@@ -69,17 +81,39 @@ function Loader(props) {
     'Loading'
   );
 }
+function LogPane(props) {
+  const items = props.items.map(x => {
+    return React.createElement(LogItem, { info: x, key: x.id, onClick: props.onClick });
+  });
+  return React.createElement(
+    'ul',
+    { className: 'log-pane' },
+    items
+  );
+}
+
+function LogItem(props) {
+  const inf = props.info;
+  const clickHandler = () => props.onClick(inf.id);
+  return React.createElement(
+    'li',
+    { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
+    React.createElement(
+      'label',
+      { className: 'service-name' },
+      inf.serviceName
+    ),
+    React.createElement(
+      'label',
+      { className: 'message' },
+      inf.message
+    )
+  );
+}
 function Overview(props) {
   const info = props.info;
   if (info.services) {
-    const items = info.services.map(x => {
-      return React.createElement(OverviewItem, { info: x, key: x.info.serviceName });
-    });
-    return React.createElement(
-      'ul',
-      { className: 'overview-list' },
-      items
-    );
+    return React.createElement(LogPane, { items: info.services, onClick: props.onClick });
   } else if (info.error) {
     return React.createElement(
       'div',
@@ -97,23 +131,6 @@ function Overview(props) {
       React.createElement(Loader, null)
     );
   }
-}
-
-function OverviewItem(props) {
-  return React.createElement(
-    'li',
-    { 'class': 'overview-item' },
-    React.createElement(
-      'label',
-      { 'class': 'service-name' },
-      'props.info.serviceName'
-    ),
-    React.createElement(
-      'label',
-      { 'class': 'message' },
-      'props.info.message'
-    )
-  );
 }
 function NavBar(props) {
   const page = props.page;

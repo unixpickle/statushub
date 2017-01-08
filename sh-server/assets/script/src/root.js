@@ -27,6 +27,10 @@ class Root extends React.Component {
     this._client.close();
   }
 
+  showServiceLog(id) {
+    console.log('got ID: ' + id);
+  }
+
   render() {
     return (
       <div>
@@ -39,7 +43,7 @@ class Root extends React.Component {
   pageContent() {
     switch (this.state.page) {
     case 'overview':
-      return <Overview info={this.state.overview} />;
+      return <Overview info={this.state.overview} onClick={(id) => this.showServiceLog(id)} />;
     case 'fullLog':
       // TODO: this.
       break;

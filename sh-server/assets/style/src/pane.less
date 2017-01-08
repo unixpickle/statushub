@@ -1,4 +1,4 @@
-@max-pane-width: 700px;
+@max-pane-width: 600px;
 @min-pane-padding: 10px;
 @pane-width-thresh: (@max-pane-width + 2*@min-pane-padding);
 
@@ -34,5 +34,19 @@
     content: @message;
     display: block;
     margin-bottom: 15px;
+    color: @black-text;
+  }
+}
+
+.error-pane {
+  .pane();
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+  background-color: #ffd6d6;
+
+  label {
+    font-style: italic;
+    color: @black-text;
   }
 }

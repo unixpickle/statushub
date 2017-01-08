@@ -1,19 +1,126 @@
+.loader {
+  display: block;
+  width: 20px;
+  height: 20px;
+  color: transparent;
+  font-size: 0;
+  background-image: url(../images/loader.svg);
+  background-size: 100% 100%;
+  animation-name: rotate;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 .pane {
   background-color: white;
   position: absolute;
-  top: 45px;
+  top: 50px;
 }
-@media (max-width: 720px) {
+@media (max-width: 620px) {
   .pane {
     width: calc(100% -  20px);
     left: 10px;
   }
 }
-@media (min-width: 720px) {
+@media (min-width: 620px) {
   .pane {
-    width: 700px;
-    left: calc(50% -  350px);
+    width: 600px;
+    left: calc(50% -  300px);
   }
+}
+.error-pane {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+  background-color: #ffd6d6;
+}
+@media (max-width: 620px) {
+  .error-pane {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .error-pane {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
+.error-pane label {
+  font-style: italic;
+  color: #555;
+}
+.log-pane {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+@media (max-width: 620px) {
+  .log-pane {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .log-pane {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
+.log-pane li {
+  width: 100%;
+  border-top: 1px solid #d5d5d5;
+  box-sizing: border-box;
+  padding: 10px;
+}
+.log-pane li:first-child {
+  border-top: none;
+}
+.log-pane li::after {
+  content: ' ';
+  display: block;
+  font-size: 0;
+  clear: both;
+}
+.log-pane li.clickable,
+.log-pane li.clickable label {
+  cursor: pointer;
+}
+.log-pane li.clickable:hover {
+  background-color: #f0f0f0;
+}
+.log-pane li label {
+  display: block;
+  float: left;
+  color: #555;
+}
+.log-pane li .service-name {
+  font-weight: bold;
+  width: 130px;
+  text-overflow: ellipsis;
+  text-align: right;
+  padding-right: 5px;
+}
+.log-pane li .message {
+  width: calc(100% - 141px);
+  overflow: hidden;
+  box-sizing: border-box;
+  padding-left: 5px;
+  border-left: 1px solid #d5d5d5;
 }
 #login-form {
   position: absolute;
@@ -58,33 +165,12 @@
 #login-form #submit:hover {
   background-color: #2e8ba5;
 }
-.loader {
-  display: block;
-  width: 20px;
-  height: 20px;
-  color: transparent;
-  font-size: 0;
-  background-image: url(../images/loader.svg);
-  background-size: 100% 100%;
-  animation-name: rotate;
-  animation-duration: 1s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 nav {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 35px;
+  height: 40px;
   text-align: center;
   background-color: white;
 }
@@ -92,11 +178,11 @@ nav a {
   display: inline-block;
   cursor: pointer;
   box-sizing: border-box;
-  height: 35px;
-  line-height: 35px;
+  height: 40px;
+  line-height: 40px;
   margin: 0 8px;
   text-decoration: none;
-  color: black;
+  color: #555;
 }
 nav .cur {
   border-bottom: 3px solid #65bcd4;
@@ -105,21 +191,21 @@ nav .cur {
 .overview-loading {
   background-color: white;
   position: absolute;
-  top: 45px;
+  top: 50px;
   box-sizing: border-box;
   padding: 15px;
   text-align: center;
 }
-@media (max-width: 720px) {
+@media (max-width: 620px) {
   .overview-loading {
     width: calc(100% -  20px);
     left: 10px;
   }
 }
-@media (min-width: 720px) {
+@media (min-width: 620px) {
   .overview-loading {
-    width: 700px;
-    left: calc(50% -  350px);
+    width: 600px;
+    left: calc(50% -  300px);
   }
 }
 .overview-loading .loader {
@@ -130,6 +216,32 @@ nav .cur {
   content: 'Loading overview...';
   display: block;
   margin-bottom: 15px;
+  color: #555;
+}
+.overview-error {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+  background-color: #ffd6d6;
+}
+@media (max-width: 620px) {
+  .overview-error {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .overview-error {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
+.overview-error label {
+  font-style: italic;
+  color: #555;
 }
 html,
 body {

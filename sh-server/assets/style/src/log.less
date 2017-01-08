@@ -1,0 +1,58 @@
+@log-item-name-width: 130px;
+@log-item-padding: 10px;
+
+.log-pane {
+  .pane();
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    width: 100%;
+    border-top: 1px solid #d5d5d5;
+    box-sizing: border-box;
+    padding: @log-item-padding;
+
+    &:first-child {
+      border-top: none;
+    }
+
+    &::after {
+      content: ' ';
+      display: block;
+      font-size: 0;
+      clear: both;
+    }
+
+    &.clickable {
+      &, label {
+        cursor: pointer;
+      }
+      &:hover {
+        background-color: #f0f0f0;
+      }
+    }
+
+    label {
+      display: block;
+      float: left;
+      color: @black-text;
+    }
+
+    .service-name {
+      font-weight: bold;
+      width: @log-item-name-width;
+      text-overflow: ellipsis;
+      text-align: right;
+      padding-right: (@log-item-padding / 2);
+    }
+
+    .message {
+      width: calc(~"100% -"(@log-item-name-width+@log-item-padding+1));
+      overflow: hidden;
+      box-sizing: border-box;
+      padding-left: (@log-item-padding / 2);
+      border-left: 1px solid #d5d5d5;
+    }
+  }
+}
