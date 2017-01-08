@@ -1,0 +1,8 @@
+{
+  "name": "sh-server",
+  "version": "0.0.0",
+  "devDependencies": {
+    "babel-cli": "^6.0.0",
+    "babel-plugin-transform-react-jsx": "6.8.x"
+  }
+}

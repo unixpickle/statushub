@@ -1,0 +1,139 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
+	"github.com/unixpickle/ratelimit"
+)
+
+type Limiter interface {
+	Limit(ipID string) bool
+}
+
+const (
+	RateLimitDuration = time.Minute * 30
+	RateLimitAttempts = 200
+)
+
+func main() {
+	var port int
+	var configPath string
+	var assetPath string
+	var reverseProxies int
+	flag.IntVar(&port, "port", 80, "port number")
+	flag.IntVar(&reverseProxies, "proxies", 0, "number of reverse proxies")
+	flag.StringVar(&configPath, "config", "config.json", "configuration file")
+	flag.StringVar(&assetPath, "assets", "assets", "assets directory")
+
+	flag.Parse()
+
+	cfg, err := LoadConfig(configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "load config:", err)
+		os.Exit(1)
+	}
+	server := &Server{
+		Config:   cfg,
+		AssetDir: assetPath,
+		Sessions: sessions.NewCookieStore(securecookie.GenerateRandomKey(16),
+			securecookie.GenerateRandomKey(16)),
+		LoginLimit: ratelimit.NewTimeSliceLimiter(RateLimitDuration, RateLimitAttempts),
+		LimitNamer: &ratelimit.HTTPRemoteNamer{NumProxies: reverseProxies},
+	}
+
+	http.HandleFunc("/", server.Root)
+	http.HandleFunc("/login", server.Login)
+	http.HandleFunc("/logout", server.Logout)
+	http.HandleFunc("/api", server.API)
+	http.Handle("/assets", http.FileServer(http.Dir(assetPath)))
+
+	if err := http.ListenAndServe(":"+strconv.Itoa(port), nil); err != nil {
+		fmt.Fprintln(os.Stderr, "listen:", err)
+		os.Exit(1)
+	}
+}
+
+type Server struct {
+	Config     *Config
+	AssetDir   string
+	Sessions   *sessions.CookieStore
+	LoginLimit Limiter
+	LimitNamer *ratelimit.HTTPRemoteNamer
+}
+
+// Root serves the homepage.
+func (s *Server) Root(w http.ResponseWriter, r *http.Request) {
+	disableCache(w)
+	if r.URL.Path != "" && r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+	if !s.authenticated(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	http.ServeFile(w, r, filepath.Join(s.AssetDir, "index.html"))
+}
+
+// Login handles the login system.
+func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
+	disableCache(w)
+	if r.Method == "GET" {
+		http.ServeFile(w, r, filepath.Join(s.AssetDir, "login.html"))
+		return
+	}
+	if s.LoginLimit.Limit(s.LimitNamer.Name(r)) {
+		http.Error(w, "too many login attempts", http.StatusTooManyRequests)
+		return
+	}
+	pass := r.FormValue("password")
+	if !s.Config.CheckPass(pass) {
+		http.Redirect(w, r, "/login?status=failure", http.StatusSeeOther)
+		return
+	}
+	sess, _ := s.Sessions.Get(r, "sessid")
+	sess.Values["authenticated"] = true
+	sess.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// Logout serves the logout function.
+func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
+	disableCache(w)
+	sess, _ := s.Sessions.Get(r, "sessid")
+	sess.Values["authenticated"] = false
+	sess.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// API serves the programmatic API endpoint.
+func (s *Server) API(w http.ResponseWriter, r *http.Request) {
+	disableCache(w)
+	if !s.authenticated(r) {
+		http.Error(w, "not authenticated", http.StatusForbidden)
+		return
+	}
+
+	// TODO: handle API here.
+	w.Write([]byte("TODO: handle API here"))
+}
+
+func (s *Server) authenticated(r *http.Request) bool {
+	sess, _ := s.Sessions.Get(r, "sessid")
+	val, _ := sess.Values["authenticated"].(bool)
+	return val
+}
+
+func disableCache(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
+}

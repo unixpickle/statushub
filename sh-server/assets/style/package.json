@@ -1,0 +1,7 @@
+{
+  "name": "sh-server",
+  "version": "0.0.0",
+  "devDependencies": {
+    "less": "2.7.x"
+  }
+}
