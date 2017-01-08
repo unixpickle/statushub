@@ -1,6 +1,14 @@
 @log-item-name-width: 130px;
 @log-item-padding: 10px;
 
+.log-scene-loading {
+  .load-pane('Loading log entries...');
+}
+
+.log-scene-error {
+  .error-pane();
+}
+
 .log-pane {
   .pane();
   list-style-type: none;

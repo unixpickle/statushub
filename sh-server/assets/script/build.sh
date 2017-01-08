@@ -14,7 +14,6 @@ cat src/root.js >joined.js
 cat src/client.js >>joined.js
 cat src/loader.js >>joined.js
 cat src/log.js >>joined.js
-cat src/overview.js >>joined.js
 cat src/nav_bar.js >>joined.js
 
 cat deps/react.js >deps.js

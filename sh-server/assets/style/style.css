@@ -61,6 +61,61 @@
   font-style: italic;
   color: #555;
 }
+.log-scene-loading {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+}
+@media (max-width: 620px) {
+  .log-scene-loading {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .log-scene-loading {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
+.log-scene-loading .loader {
+  position: relative;
+  left: calc(50% - 10px);
+}
+.log-scene-loading::before {
+  content: 'Loading log entries...';
+  display: block;
+  margin-bottom: 15px;
+  color: #555;
+}
+.log-scene-error {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+  background-color: #ffd6d6;
+}
+@media (max-width: 620px) {
+  .log-scene-error {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .log-scene-error {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
+.log-scene-error label {
+  font-style: italic;
+  color: #555;
+}
 .log-pane {
   background-color: white;
   position: absolute;
@@ -187,61 +242,6 @@ nav a {
 nav .cur {
   border-bottom: 3px solid #65bcd4;
   color: #65bcd4;
-}
-.overview-loading {
-  background-color: white;
-  position: absolute;
-  top: 50px;
-  box-sizing: border-box;
-  padding: 15px;
-  text-align: center;
-}
-@media (max-width: 620px) {
-  .overview-loading {
-    width: calc(100% -  20px);
-    left: 10px;
-  }
-}
-@media (min-width: 620px) {
-  .overview-loading {
-    width: 600px;
-    left: calc(50% -  300px);
-  }
-}
-.overview-loading .loader {
-  position: relative;
-  left: calc(50% - 10px);
-}
-.overview-loading::before {
-  content: 'Loading overview...';
-  display: block;
-  margin-bottom: 15px;
-  color: #555;
-}
-.overview-error {
-  background-color: white;
-  position: absolute;
-  top: 50px;
-  box-sizing: border-box;
-  padding: 15px;
-  text-align: center;
-  background-color: #ffd6d6;
-}
-@media (max-width: 620px) {
-  .overview-error {
-    width: calc(100% -  20px);
-    left: 10px;
-  }
-}
-@media (min-width: 620px) {
-  .overview-error {
-    width: 600px;
-    left: calc(50% -  300px);
-  }
-}
-.overview-error label {
-  font-style: italic;
-  color: #555;
 }
 html,
 body {
