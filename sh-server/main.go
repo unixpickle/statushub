@@ -53,7 +53,8 @@ func main() {
 	http.HandleFunc("/login", server.Login)
 	http.HandleFunc("/logout", server.Logout)
 	http.HandleFunc("/api", server.API)
-	http.Handle("/assets", http.FileServer(http.Dir(assetPath)))
+	http.Handle("/assets/", http.StripPrefix("/assets/",
+		http.FileServer(http.Dir(assetPath))))
 
 	if err := http.ListenAndServe(":"+strconv.Itoa(port), nil); err != nil {
 		fmt.Fprintln(os.Stderr, "listen:", err)

@@ -1,0 +1,45 @@
+#login-page {
+  background-color: #d5d5d5;
+}
+#login-form {
+  position: absolute;
+  height: 50px;
+  width: 300px;
+  top: calc(50% -  25px);
+  left: calc(50% -  150px);
+  box-sizing: border-box;
+  padding: 10px;
+  background-color: white;
+  text-align: center;
+}
+#login-form #password {
+  float: left;
+  width: 190px;
+  height: 30px;
+  border: 1px solid #d5d5d5;
+  padding: 0 5px;
+  font-size: 18px;
+  box-sizing: border-box;
+}
+#login-form #password:focus {
+  outline: 0;
+}
+#login-form #submit {
+  float: right;
+  width: 80px;
+  height: 30px;
+  line-height: 30px;
+  font-size: 18px;
+  color: white;
+  font-weight: 300;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background-color: #65bcd4;
+}
+#login-form #submit:focus {
+  outline: 0;
+}
+#login-form #submit:hover {
+  background-color: #2e8ba5;
+}

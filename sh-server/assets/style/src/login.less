@@ -1,0 +1,61 @@
+@login-form-button-width: 80px;
+@login-form-button-height: 30px;
+@login-form-padding: 10px;
+@login-form-width: 300px;
+@login-form-height: @login-form-padding*2 + @login-form-button-height;
+@login-button-color: #65bcd4;
+@login-font-size: 18px;
+
+#login-page {
+  background-color: #d5d5d5;
+}
+
+#login-form {
+  position: absolute;
+  height: @login-form-height;
+  width: @login-form-width;
+  top: calc(~"50% - "(@login-form-height/2));
+  left: calc(~"50% - "(@login-form-width/2));
+  box-sizing: border-box;
+  padding: @login-form-padding;
+  background-color: white;
+
+  text-align: center;
+
+  #password {
+    float: left;
+    width: (@login-form-width - @login-form-button-width -
+      3*@login-form-padding);
+    height: @login-form-button-height;
+    border: 1px solid #d5d5d5;
+    padding: 0 5px;
+    font-size: @login-font-size;
+    box-sizing: border-box;
+  }
+
+  #password:focus {
+    outline: 0;
+  }
+
+  #submit {
+    float: right;
+    width: @login-form-button-width;
+    height: @login-form-button-height;
+    line-height: @login-form-button-height;
+    font-size: @login-font-size;
+    color: white;
+    font-weight: 300;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background-color: @login-button-color;
+  }
+
+  #submit:focus {
+    outline: 0;
+  }
+
+  #submit:hover {
+    background-color: darken(@login-button-color, 20%);
+  }
+}
