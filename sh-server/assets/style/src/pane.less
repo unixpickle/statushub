@@ -1,0 +1,38 @@
+@max-pane-width: 700px;
+@min-pane-padding: 10px;
+@pane-width-thresh: (@max-pane-width + 2*@min-pane-padding);
+
+.pane {
+  background-color: white;
+
+  position: absolute;
+  top: @nav-height + 10px;
+
+  @media (max-width: @pane-width-thresh) {
+    width: calc(~"100% - "(@min-pane-padding*2));
+    left: @min-pane-padding;
+  }
+
+  @media (min-width: @pane-width-thresh) {
+    width: @max-pane-width;
+    left: calc(~"50% - "(@max-pane-width/2));
+  }
+}
+
+.load-pane(@message) {
+  .pane();
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+
+  .loader {
+    position: relative;
+    left: calc(~"50% -"(@loader-size/2));
+  }
+
+  &::before {
+    content: @message;
+    display: block;
+    margin-bottom: 15px;
+  }
+}

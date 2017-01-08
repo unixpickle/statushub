@@ -1,0 +1,22 @@
+@loader-size: 20px;
+
+.loader {
+	display: block;
+	width: @loader-size;
+	height: @loader-size;
+	color: transparent;
+	font-size: 0;
+
+	background-image: url(../images/loader.svg);
+	background-size: 100% 100%;
+
+	animation-name: rotate;
+	animation-duration: 1s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+}
+
+@keyframes rotate {
+    from {transform: rotate(0deg);}
+    to {transform: rotate(360deg);}
+}

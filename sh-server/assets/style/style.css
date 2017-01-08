@@ -1,5 +1,19 @@
-#login-page {
-  background-color: #d5d5d5;
+.pane {
+  background-color: white;
+  position: absolute;
+  top: 45px;
+}
+@media (max-width: 720px) {
+  .pane {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 720px) {
+  .pane {
+    width: 700px;
+    left: calc(50% -  350px);
+  }
 }
 #login-form {
   position: absolute;
@@ -36,10 +50,91 @@
   padding: 0;
   margin: 0;
   background-color: #65bcd4;
+  cursor: pointer;
 }
 #login-form #submit:focus {
   outline: 0;
 }
 #login-form #submit:hover {
   background-color: #2e8ba5;
+}
+.loader {
+  display: block;
+  width: 20px;
+  height: 20px;
+  color: transparent;
+  font-size: 0;
+  background-image: url(../images/loader.svg);
+  background-size: 100% 100%;
+  animation-name: rotate;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 35px;
+  text-align: center;
+  background-color: white;
+}
+nav a {
+  display: inline-block;
+  cursor: pointer;
+  box-sizing: border-box;
+  height: 35px;
+  line-height: 35px;
+  margin: 0 8px;
+  text-decoration: none;
+  color: black;
+}
+nav .cur {
+  border-bottom: 3px solid #65bcd4;
+  color: #65bcd4;
+}
+.overview-loading {
+  background-color: white;
+  position: absolute;
+  top: 45px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+}
+@media (max-width: 720px) {
+  .overview-loading {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 720px) {
+  .overview-loading {
+    width: 700px;
+    left: calc(50% -  350px);
+  }
+}
+.overview-loading .loader {
+  position: relative;
+  left: calc(50% - 10px);
+}
+.overview-loading::before {
+  content: 'Loading overview...';
+  display: block;
+  margin-bottom: 15px;
+}
+html,
+body {
+  font-family: sans-serif !important;
+  border: 0;
+  margin: 0;
+  background-color: #d5d5d5;
 }

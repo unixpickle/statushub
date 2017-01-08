@@ -1,0 +1,29 @@
+@nav-height: 35px;
+@nav-highlight-size: 3px;
+@nav-highlight-color: #65bcd4;
+
+nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: @nav-height;
+  text-align: center;
+  background-color: white;
+
+  a {
+    display: inline-block;
+    cursor: pointer;
+    box-sizing: border-box;
+    height: @nav-height;
+    line-height: @nav-height;
+    margin: 0 8px;
+    text-decoration: none;
+    color: black;
+  }
+
+  .cur {
+    border-bottom: @nav-highlight-size solid @nav-highlight-color;
+    color: @nav-highlight-color;
+  }
+}
