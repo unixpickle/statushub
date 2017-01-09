@@ -1,0 +1,88 @@
+@settings-field-margins: 5px;
+@settings-field-padding: 2px;
+@settings-field-height: 30px;
+@settings-padding: 15px;
+@settings-section-spacing: @settings-field-margins;
+@error-text-color: #ff0000;
+
+.settings-pane {
+  .pane();
+  box-sizing: border-box;
+  padding: @settings-padding;
+
+  .password-setter {
+    margin-bottom: @settings-section-spacing;
+    padding-bottom: (@settings-section-spacing + 1);
+    border-bottom: 1px solid #d5d5d5;
+  }
+
+  .main-settings {
+    .loader {
+      margin-left: calc(~"50% -"(@loader-size/2));
+      margin-top: @settings-padding;
+    }
+
+    .init-error {
+      display: block;
+      margin-top: @settings-padding;
+      text-align: center;
+      color: @error-text-color;
+    }
+  }
+
+  .settings-field {
+    .clear-both-after();
+
+    width: 100%;
+    height: @settings-field-height;
+    padding: @settings-field-padding 0;
+
+    label, input {
+      width: calc(~"50% -"@settings-field-margins);
+      height: @settings-field-height;
+    }
+
+    label {
+      float: left;
+      text-align: right;
+      line-height: @settings-field-height;
+    }
+
+    input {
+      float: right;
+      box-sizing: border-box;
+      border: 1px solid #d5d5d5;
+      font-size: 16px;
+
+      &:focus {
+        outline: 0;
+      }
+    }
+  }
+
+  .settings-action {
+    .clear-both-after();
+
+    margin-top: @settings-field-margins;
+
+    .loader {
+      float: right;
+      margin-top: (@submit-button-height - @loader-size) / 2;
+      margin-right: @settings-field-margins;
+    }
+
+    button {
+      .submit-button();
+      float: right;
+      padding: 0 10px;
+    }
+
+    .error {
+      display: block;
+      clear: both;
+      padding-top: @settings-field-margins;
+      text-align: right;
+      color: @error-text-color;
+    }
+  }
+}

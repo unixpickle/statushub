@@ -43,3 +43,26 @@ class Client {
     this.onSettings = function() {};
   }
 }
+
+function callAPI(name, params, cb) {
+  let canceled = false;
+  const req = new XMLHttpRequest();
+  req.open('POST', '/api/'+name, true);
+  req.setRequestHeader('Content-Type', 'application/json');
+  req.onreadystatechange = () => {
+    if (req.readyState === 4) {
+      try {
+        const obj = JSON.parse(req.responseText);
+        if (obj.error) {
+          cb(obj.error, null);
+        } else {
+          cb(null, obj.data);
+        }
+      } catch (e) {
+        cb('invalid JSON in response', null);
+      }
+    }
+  };
+  req.send(JSON.stringify(params));
+  return req;
+}

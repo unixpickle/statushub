@@ -1,3 +1,9 @@
+.clear-both-after::after {
+  content: ' ';
+  display: block;
+  font-size: 0;
+  clear: both;
+}
 .loader {
   display: block;
   width: 20px;
@@ -60,6 +66,31 @@
 .error-pane label {
   font-style: italic;
   color: #555;
+}
+.submit-button {
+  height: 30px;
+  line-height: 30px;
+  font-size: 18px;
+  color: white;
+  font-weight: 300;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background-color: #65bcd4;
+  cursor: pointer;
+}
+.submit-button:focus {
+  outline: 0;
+}
+.submit-button:hover {
+  background-color: #2e8ba5;
+}
+.submit-button.disabled {
+  pointer-events: none;
+}
+.submit-button.disabled,
+.submit-button.disabled:hover {
+  background-color: #b5dfea;
 }
 .log-scene-loading {
   background-color: white;
@@ -142,14 +173,14 @@
   box-sizing: border-box;
   padding: 10px;
 }
-.log-pane li:first-child {
-  border-top: none;
-}
 .log-pane li::after {
   content: ' ';
   display: block;
   font-size: 0;
   clear: both;
+}
+.log-pane li:first-child {
+  border-top: none;
 }
 .log-pane li.clickable,
 .log-pane li.clickable label {
@@ -201,8 +232,6 @@
   outline: 0;
 }
 #login-form #submit {
-  float: right;
-  width: 80px;
   height: 30px;
   line-height: 30px;
   font-size: 18px;
@@ -213,12 +242,21 @@
   margin: 0;
   background-color: #65bcd4;
   cursor: pointer;
+  float: right;
+  width: 80px;
 }
 #login-form #submit:focus {
   outline: 0;
 }
 #login-form #submit:hover {
   background-color: #2e8ba5;
+}
+#login-form #submit.disabled {
+  pointer-events: none;
+}
+#login-form #submit.disabled,
+#login-form #submit.disabled:hover {
+  background-color: #b5dfea;
 }
 nav {
   position: absolute;
@@ -242,6 +280,118 @@ nav a {
 nav .cur {
   border-bottom: 3px solid #65bcd4;
   color: #65bcd4;
+}
+.settings-pane {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+}
+@media (max-width: 620px) {
+  .settings-pane {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .settings-pane {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
+.settings-pane .password-setter {
+  margin-bottom: 5px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #d5d5d5;
+}
+.settings-pane .main-settings .loader {
+  margin-left: calc(50% - 10px);
+  margin-top: 15px;
+}
+.settings-pane .main-settings .init-error {
+  display: block;
+  margin-top: 15px;
+  text-align: center;
+  color: #ff0000;
+}
+.settings-pane .settings-field {
+  width: 100%;
+  height: 30px;
+  padding: 2px 0;
+}
+.settings-pane .settings-field::after {
+  content: ' ';
+  display: block;
+  font-size: 0;
+  clear: both;
+}
+.settings-pane .settings-field label,
+.settings-pane .settings-field input {
+  width: calc(50% - 5px);
+  height: 30px;
+}
+.settings-pane .settings-field label {
+  float: left;
+  text-align: right;
+  line-height: 30px;
+}
+.settings-pane .settings-field input {
+  float: right;
+  box-sizing: border-box;
+  border: 1px solid #d5d5d5;
+  font-size: 16px;
+}
+.settings-pane .settings-field input:focus {
+  outline: 0;
+}
+.settings-pane .settings-action {
+  margin-top: 5px;
+}
+.settings-pane .settings-action::after {
+  content: ' ';
+  display: block;
+  font-size: 0;
+  clear: both;
+}
+.settings-pane .settings-action .loader {
+  float: right;
+  margin-top: 5px;
+  margin-right: 5px;
+}
+.settings-pane .settings-action button {
+  height: 30px;
+  line-height: 30px;
+  font-size: 18px;
+  color: white;
+  font-weight: 300;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background-color: #65bcd4;
+  cursor: pointer;
+  float: right;
+  padding: 0 10px;
+}
+.settings-pane .settings-action button:focus {
+  outline: 0;
+}
+.settings-pane .settings-action button:hover {
+  background-color: #2e8ba5;
+}
+.settings-pane .settings-action button.disabled {
+  pointer-events: none;
+}
+.settings-pane .settings-action button.disabled,
+.settings-pane .settings-action button.disabled:hover {
+  background-color: #b5dfea;
+}
+.settings-pane .settings-action .error {
+  display: block;
+  clear: both;
+  padding-top: 5px;
+  text-align: right;
+  color: #ff0000;
 }
 html,
 body {

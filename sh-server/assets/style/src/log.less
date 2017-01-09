@@ -16,6 +16,8 @@
   padding: 0;
 
   li {
+    .clear-both-after();
+
     width: 100%;
     border-top: 1px solid #d5d5d5;
     box-sizing: border-box;
@@ -23,13 +25,6 @@
 
     &:first-child {
       border-top: none;
-    }
-
-    &::after {
-      content: ' ';
-      display: block;
-      font-size: 0;
-      clear: both;
     }
 
     &.clickable {

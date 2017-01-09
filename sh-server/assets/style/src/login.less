@@ -1,10 +1,7 @@
 @login-form-button-width: 80px;
-@login-form-button-height: 30px;
 @login-form-padding: 10px;
 @login-form-width: 300px;
-@login-form-height: @login-form-padding*2 + @login-form-button-height;
-@login-button-color: #65bcd4;
-@login-font-size: 18px;
+@login-form-height: @login-form-padding*2 + @submit-button-height;
 
 #login-form {
   position: absolute;
@@ -22,10 +19,10 @@
     float: left;
     width: (@login-form-width - @login-form-button-width -
       3*@login-form-padding);
-    height: @login-form-button-height;
+    height: @submit-button-height;
     border: 1px solid #d5d5d5;
     padding: 0 5px;
-    font-size: @login-font-size;
+    font-size: @submit-button-font-size;
     box-sizing: border-box;
   }
 
@@ -34,25 +31,8 @@
   }
 
   #submit {
+    .submit-button();
     float: right;
     width: @login-form-button-width;
-    height: @login-form-button-height;
-    line-height: @login-form-button-height;
-    font-size: @login-font-size;
-    color: white;
-    font-weight: 300;
-    border: none;
-    padding: 0;
-    margin: 0;
-    background-color: @login-button-color;
-    cursor: pointer;
-  }
-
-  #submit:focus {
-    outline: 0;
-  }
-
-  #submit:hover {
-    background-color: darken(@login-button-color, 20%);
   }
 }

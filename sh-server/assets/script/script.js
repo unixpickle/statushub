@@ -181,6 +181,29 @@ class Client {
     this.onSettings = function () {};
   }
 }
+
+function callAPI(name, params, cb) {
+  let canceled = false;
+  const req = new XMLHttpRequest();
+  req.open('POST', '/api/' + name, true);
+  req.setRequestHeader('Content-Type', 'application/json');
+  req.onreadystatechange = () => {
+    if (req.readyState === 4) {
+      try {
+        const obj = JSON.parse(req.responseText);
+        if (obj.error) {
+          cb(obj.error, null);
+        } else {
+          cb(null, obj.data);
+        }
+      } catch (e) {
+        cb('invalid JSON in response', null);
+      }
+    }
+  };
+  req.send(JSON.stringify(params));
+  return req;
+}
 function Loader(props) {
   return React.createElement(
     'div',
@@ -268,10 +291,170 @@ function VoidLink(props) {
     );
   }
 }
-function Settings(props) {
+class Settings extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      initLoading: true,
+      initError: null,
+      password: { loading: false, error: null },
+      settings: { loading: false, error: null },
+      passwordFields: {
+        old: '',
+        new: '',
+        confirm: ''
+      },
+      settingsFields: {
+        logInterval: 0
+      }
+    };
+    this._passwordReq = null;
+    this._settingsReq = null;
+  }
+
+  componentDidMount() {
+    this._settingsReq = callAPI('getprefs', {}, (err, data) => {
+      this._settingsReq = null;
+      err = null;
+      data = { logInterval: 300 };
+      this.setState({
+        initLoading: false,
+        initError: err,
+        settingsFields: data
+      });
+    });
+  }
+
+  componentWillUnmount() {
+    if (this._settingsReq) {
+      this._settingsReq.abort();
+    }
+    if (this._passwordReq) {
+      this._passwordReq.abort();
+    }
+  }
+
+  handleChangePassword() {
+    this.setState({ password: { loading: true, error: null } });
+    this._passwordReq = callAPI('chpass', this.state.passwordFields, err => {
+      this._passwordReq = null;
+      this.setState({ password: { loading: false, error: err } });
+    });
+  }
+
+  handleSaveSettings() {
+    this.setState({ settings: { loading: true, error: null } });
+    this._settingsReq = callAPI('setprefs', this.state.settingsFields, err => {
+      this._settingsReq = null;
+      this.setState({ settings: { loading: false, error: err } });
+    });
+  }
+
+  render() {
+    let mainSettings;
+    if (this.state.initLoading) {
+      mainSettings = React.createElement(Loader, null);
+    } else if (this.state.initError) {
+      mainSettings = React.createElement(
+        'label',
+        { className: 'init-error' },
+        this.state.initError
+      );
+    } else {
+      const handleSet = (name, val) => this.handleSettingChanged(name, val);
+      const handleSave = () => this.handleSaveSettings();
+      mainSettings = React.createElement(MainSettings, { data: this.state.settingsFields,
+        status: this.state.settings,
+        onChange: handleSet,
+        onSave: handleSave });
+    }
+    return React.createElement(
+      'div',
+      { className: 'settings-pane' },
+      React.createElement(
+        'div',
+        { className: 'password-setter' },
+        this.passwordField('Old password', 'old'),
+        this.passwordField('New password', 'new'),
+        this.passwordField('Confirm password', 'confirm'),
+        React.createElement(SettingsAction, { text: 'Change Password', info: this.state.password,
+          onAction: () => this.handleChangePassword() })
+      ),
+      React.createElement(
+        'div',
+        { className: 'main-settings' },
+        mainSettings
+      )
+    );
+  }
+
+  passwordField(name, id) {
+    const handleChange = e => {
+      this.handlePasswordFieldChanged(id, e.target.value);
+    };
+    return React.createElement(SettingsField, { name: name, type: 'password',
+      onChange: handleChange,
+      value: this.state.passwordFields[id] });
+  }
+
+  handlePasswordFieldChanged(id, val) {
+    const f = Object.assign({}, this.state.passwordFields);
+    f[id] = val;
+    this.setState({ passwordFields: f });
+  }
+
+  handleSettingChanged(id, val) {
+    const f = Object.assign({}, this.state.settingsFields);
+    f[id] = val;
+    this.setState({ settingsFields: f });
+  }
+}
+
+function MainSettings(props) {
+  const handleChange = e => props.onChange('logInterval', e.target.value);
   return React.createElement(
     'div',
-    { className: 'pane' },
-    'Settings here'
+    null,
+    React.createElement(SettingsField, { name: 'Log Interval', value: props.data.logInterval,
+      onChange: handleChange }),
+    React.createElement(SettingsAction, { text: 'Save', info: props.status, onAction: props.onSave })
+  );
+}
+
+function SettingsField(props) {
+  return React.createElement(
+    'div',
+    { className: 'settings-field' },
+    React.createElement(
+      'label',
+      null,
+      props.name
+    ),
+    React.createElement('input', { type: props.type, value: props.value, onChange: props.onChange })
+  );
+}
+
+function SettingsAction(props) {
+  const info = props.info;
+  let onAction = props.onAction;
+  let btnClass = '';
+  if (info.loading) {
+    onAction = function () {};
+    btnClass = 'disabled';
+  }
+  return React.createElement(
+    'div',
+    { className: 'settings-action' },
+    React.createElement(
+      'button',
+      { onClick: onAction, className: btnClass },
+      props.text
+    ),
+    info.loading ? React.createElement(Loader, null) : null,
+    !info.error ? null : React.createElement(
+      'label',
+      { className: 'error' },
+      info.error
+    )
   );
 }
