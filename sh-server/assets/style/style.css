@@ -341,6 +341,7 @@ nav .cur {
   box-sizing: border-box;
   border: 1px solid #d5d5d5;
   font-size: 16px;
+  padding: 0 3px;
 }
 .settings-pane .settings-field input:focus {
   outline: 0;
