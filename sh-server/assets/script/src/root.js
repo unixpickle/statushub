@@ -6,7 +6,6 @@ class Root extends React.Component {
       overview: {error: null, entries: null},
       fullLog: {error: null, entries: null},
       serviceLog: {error: null, entries: null},
-      settings: {error: null, entries: null},
       serviceLogReq: ''
     };
     if (!history.state) {
@@ -55,15 +54,20 @@ class Root extends React.Component {
     case 'fullLog':
       return <LogScene info={this.state.fullLog} />;
     case 'serviceLog':
-      return <LogScene info={this.state.serviceLog} />;
+      return <LogScene info={this.state.serviceLog}
+                       onDelete={() => this.handleDelete()} />;
     case 'settings':
       return <Settings info={this.state.settings} />;
+    case 'delete':
+      return <DeleteService service={this.state.serviceLogReq}
+                            onCancel={() => this.handleDeleteCancel()}
+                            onDone={() => this.handleDeleted()} />;
     }
     throw new Error('unsupported page: ' + this.state.page);
   }
 
   fetchPageData() {
-    if (this.state[this.state.page].entries) {
+    if (this.state[this.state.page] && this.state[this.state.page].entries) {
       return;
     }
     switch (this.state.page) {
@@ -102,10 +106,22 @@ class Root extends React.Component {
       return;
     }
     var s = {page: name};
-    if (this.state[name].error) {
+    if (name !== 'settings') {
       s[name] = {error: null, entries: null};
     }
     this.setState(s, () => this.pushAndFetch());
+  }
+
+  handleDelete() {
+    this.setState({page: 'delete'}, () => this.pushHistory());
+  }
+
+  handleDeleteCancel() {
+    this.setState({page: 'serviceLog'}, () => this.pushHistory());
+  }
+
+  handleDeleted() {
+    this.showTab('overview');
   }
 
   pushAndFetch() {

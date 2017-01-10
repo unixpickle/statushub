@@ -56,6 +56,7 @@ func main() {
 	http.HandleFunc("/api/overview", server.OverviewAPI)
 	http.HandleFunc("/api/serviceLog", server.ServiceLogAPI)
 	http.HandleFunc("/api/fullLog", server.FullLogAPI)
+	http.HandleFunc("/api/delete", server.DeleteAPI)
 	http.Handle("/assets/", http.StripPrefix("/assets/",
 		http.FileServer(assetFS())))
 

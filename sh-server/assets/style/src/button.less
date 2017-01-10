@@ -1,18 +1,17 @@
-@submit-button-height: 30px;
-@submit-button-font-size: 18px;
+@button-height: 30px;
+@button-font-size: 18px;
 @submit-button-color: #65bcd4;
-@submit-button-disabled-color: lighten(@submit-button-color, 20%);
 
-.submit-button {
-  height: @submit-button-height;
-  line-height: @submit-button-height;
-  font-size: @submit-button-font-size;
+.button(@button-color) {
+  height: @button-height;
+  line-height: @button-height;
+  font-size: @button-font-size;
   color: white;
   font-weight: 300;
   border: none;
-  padding: 0;
+  padding: 0 10px;
   margin: 0;
-  background-color: @submit-button-color;
+  background-color: @button-color;
   cursor: pointer;
 
   &:focus {
@@ -20,14 +19,26 @@
   }
 
   &:hover {
-    background-color: darken(@submit-button-color, 20%);
+    background-color: darken(@button-color, 20%);
   }
 
   &.disabled {
     pointer-events: none;
 
     &, &:hover {
-      background-color: @submit-button-disabled-color;
+      background-color: lighten(@button-color, 20%);
     }
   }
+}
+
+.submit-button {
+  .button(@submit-button-color);
+}
+
+.cancel-button {
+  .button(#777);
+}
+
+.delete-button {
+  .button(#e36a8f);
 }

@@ -48,6 +48,7 @@ When you have edited an asset for `sh-server` such as a stylesheet or a script f
 
 # TODO
 
+ * Finish Go client
  * Persist the log to a file
  * Android Wear application
  * Use a grid layout for the "Overview" page

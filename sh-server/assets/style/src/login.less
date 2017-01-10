@@ -1,7 +1,7 @@
 @login-form-button-width: 80px;
 @login-form-padding: 10px;
 @login-form-width: 300px;
-@login-form-height: @login-form-padding*2 + @submit-button-height;
+@login-form-height: @login-form-padding*2 + @button-height;
 
 #login-form {
   position: absolute;
@@ -19,10 +19,10 @@
     float: left;
     width: (@login-form-width - @login-form-button-width -
       3*@login-form-padding);
-    height: @submit-button-height;
+    height: @button-height;
     border: 1px solid #d5d5d5;
     padding: 0 5px;
-    font-size: @submit-button-font-size;
+    font-size: @button-font-size;
     box-sizing: border-box;
   }
 
@@ -32,6 +32,7 @@
 
   #submit {
     .submit-button();
+    padding: 0;
     float: right;
     width: @login-form-button-width;
   }

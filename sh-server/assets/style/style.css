@@ -94,7 +94,7 @@
   color: white;
   font-weight: 300;
   border: none;
-  padding: 0;
+  padding: 0 10px;
   margin: 0;
   background-color: #65bcd4;
   cursor: pointer;
@@ -111,6 +111,56 @@
 .submit-button.disabled,
 .submit-button.disabled:hover {
   background-color: #b5dfea;
+}
+.cancel-button {
+  height: 30px;
+  line-height: 30px;
+  font-size: 18px;
+  color: white;
+  font-weight: 300;
+  border: none;
+  padding: 0 10px;
+  margin: 0;
+  background-color: #777;
+  cursor: pointer;
+}
+.cancel-button:focus {
+  outline: 0;
+}
+.cancel-button:hover {
+  background-color: #444444;
+}
+.cancel-button.disabled {
+  pointer-events: none;
+}
+.cancel-button.disabled,
+.cancel-button.disabled:hover {
+  background-color: #aaaaaa;
+}
+.delete-button {
+  height: 30px;
+  line-height: 30px;
+  font-size: 18px;
+  color: white;
+  font-weight: 300;
+  border: none;
+  padding: 0 10px;
+  margin: 0;
+  background-color: #e36a8f;
+  cursor: pointer;
+}
+.delete-button:focus {
+  outline: 0;
+}
+.delete-button:hover {
+  background-color: #c22555;
+}
+.delete-button.disabled {
+  pointer-events: none;
+}
+.delete-button.disabled,
+.delete-button.disabled:hover {
+  background-color: #f3c0d0;
 }
 .log-scene-loading {
   background-color: white;
@@ -249,6 +299,9 @@
   padding-left: 5px;
   border-left: 1px solid #d5d5d5;
 }
+.log-pane .action {
+  text-align: center;
+}
 #login-form {
   position: absolute;
   height: 50px;
@@ -279,10 +332,11 @@
   color: white;
   font-weight: 300;
   border: none;
-  padding: 0;
+  padding: 0 10px;
   margin: 0;
   background-color: #65bcd4;
   cursor: pointer;
+  padding: 0;
   float: right;
   width: 80px;
 }
@@ -409,12 +463,11 @@ nav .cur {
   color: white;
   font-weight: 300;
   border: none;
-  padding: 0;
+  padding: 0 10px;
   margin: 0;
   background-color: #65bcd4;
   cursor: pointer;
   float: right;
-  padding: 0 10px;
 }
 .settings-pane .settings-action button:focus {
   outline: 0;
@@ -440,6 +493,39 @@ nav .cur {
 }
 .settings-pane .settings-action .success {
   color: #65bcd4;
+}
+.delete-pane {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+}
+@media (max-width: 620px) {
+  .delete-pane {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .delete-pane {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
+.delete-pane .buttons {
+  text-align: center;
+  margin-top: 10px;
+}
+.delete-pane .buttons button {
+  margin: 0 5px;
+}
+.delete-pane .error {
+  display: inline-block;
+  margin-top: 10px;
+  color: #ff0000;
+  text-align: center;
 }
 html,
 body {

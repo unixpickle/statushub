@@ -16,6 +16,7 @@ cat src/loader.js >>joined.js
 cat src/log.js >>joined.js
 cat src/nav_bar.js >>joined.js
 cat src/settings.js >>joined.js
+cat src/delete.js >>joined.js
 
 cat deps/react.js >deps.js
 cat deps/react-dom.js >>deps.js

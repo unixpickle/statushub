@@ -29,15 +29,17 @@ function callAPI(name, params, cb) {
   req.setRequestHeader('Content-Type', 'application/json');
   req.onreadystatechange = () => {
     if (req.readyState === 4) {
+      let obj;
       try {
-        const obj = JSON.parse(req.responseText);
-        if (obj.error) {
-          cb(obj.error, null);
-        } else {
-          cb(null, obj.data);
-        }
+        obj = JSON.parse(req.responseText);
       } catch (e) {
         cb('invalid JSON in response', null);
+        return;
+      }
+      if (obj.error) {
+        cb(obj.error, null);
+      } else {
+        cb(null, obj.data);
       }
     }
   };

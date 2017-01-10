@@ -108,6 +108,21 @@ func (s *Server) ServiceLogAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteAPI serves the API for deleting services.
+func (s *Server) DeleteAPI(w http.ResponseWriter, r *http.Request) {
+	var obj struct {
+		Service string `json:"service"`
+	}
+	if !s.processAPICall(w, r, &obj) {
+		return
+	}
+	if err := s.Log.DeleteService(obj.Service); err != nil {
+		s.serveError(w, err.Error())
+	} else {
+		s.servePayload(w, true)
+	}
+}
+
 func (s *Server) processAPICall(w http.ResponseWriter, r *http.Request, inData interface{}) bool {
 	disableCache(w)
 	if !s.authenticated(r) {

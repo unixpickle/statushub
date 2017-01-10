@@ -6,7 +6,6 @@ class Root extends React.Component {
       overview: { error: null, entries: null },
       fullLog: { error: null, entries: null },
       serviceLog: { error: null, entries: null },
-      settings: { error: null, entries: null },
       serviceLogReq: ''
     };
     if (!history.state) {
@@ -55,15 +54,20 @@ class Root extends React.Component {
       case 'fullLog':
         return React.createElement(LogScene, { info: this.state.fullLog });
       case 'serviceLog':
-        return React.createElement(LogScene, { info: this.state.serviceLog });
+        return React.createElement(LogScene, { info: this.state.serviceLog,
+          onDelete: () => this.handleDelete() });
       case 'settings':
         return React.createElement(Settings, { info: this.state.settings });
+      case 'delete':
+        return React.createElement(DeleteService, { service: this.state.serviceLogReq,
+          onCancel: () => this.handleDeleteCancel(),
+          onDone: () => this.handleDeleted() });
     }
     throw new Error('unsupported page: ' + this.state.page);
   }
 
   fetchPageData() {
-    if (this.state[this.state.page].entries) {
+    if (this.state[this.state.page] && this.state[this.state.page].entries) {
       return;
     }
     switch (this.state.page) {
@@ -102,10 +106,22 @@ class Root extends React.Component {
       return;
     }
     var s = { page: name };
-    if (this.state[name].error) {
+    if (name !== 'settings') {
       s[name] = { error: null, entries: null };
     }
     this.setState(s, () => this.pushAndFetch());
+  }
+
+  handleDelete() {
+    this.setState({ page: 'delete' }, () => this.pushHistory());
+  }
+
+  handleDeleteCancel() {
+    this.setState({ page: 'serviceLog' }, () => this.pushHistory());
+  }
+
+  handleDeleted() {
+    this.showTab('overview');
   }
 
   pushAndFetch() {
@@ -170,15 +186,17 @@ function callAPI(name, params, cb) {
   req.setRequestHeader('Content-Type', 'application/json');
   req.onreadystatechange = () => {
     if (req.readyState === 4) {
+      let obj;
       try {
-        const obj = JSON.parse(req.responseText);
-        if (obj.error) {
-          cb(obj.error, null);
-        } else {
-          cb(null, obj.data);
-        }
+        obj = JSON.parse(req.responseText);
       } catch (e) {
         cb('invalid JSON in response', null);
+        return;
+      }
+      if (obj.error) {
+        cb(obj.error, null);
+      } else {
+        cb(null, obj.data);
       }
     }
   };
@@ -202,7 +220,8 @@ function LogScene(props) {
         'No log entries'
       );
     } else {
-      return React.createElement(LogPane, { items: info.entries, onClick: props.onClick });
+      return React.createElement(LogPane, { items: info.entries, onClick: props.onClick,
+        onDelete: props.onDelete });
     }
   } else if (info.error) {
     return React.createElement(
@@ -228,6 +247,18 @@ function LogPane(props) {
   const items = props.items.map(x => {
     return React.createElement(LogItem, { info: x, key: x.id, onClick: props.onClick });
   });
+  if (props.onDelete) {
+    const action = React.createElement(
+      'li',
+      { className: 'action', key: 'deleteaction' },
+      React.createElement(
+        'button',
+        { className: 'delete-button', onClick: props.onDelete },
+        'Delete'
+      )
+    );
+    items.splice(0, 0, action);
+  }
   return React.createElement(
     'ul',
     { className: 'log-pane' },
@@ -237,7 +268,7 @@ function LogPane(props) {
 
 function LogItem(props) {
   const inf = props.info;
-  const clickHandler = () => props.onClick(inf);
+  let clickHandler = !props.onClick ? null : () => props.onClick(inf);
   return React.createElement(
     'li',
     { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
@@ -463,4 +494,71 @@ function SettingsAction(props) {
     info.loading ? React.createElement(Loader, null) : null,
     statusLabel
   );
+}
+class DeleteService extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      loading: false,
+      error: null
+    };
+    this._deleteReq = null;
+  }
+
+  componentWillUnmount() {
+    if (this._deleteReq) {
+      this._deleteReq.abort();
+    }
+  }
+
+  handleDelete() {
+    this.setState({ loading: true, error: null });
+    this._deleteReq = callAPI('delete', { service: this.props.service }, e => {
+      this._deleteReq = null;
+      if (e) {
+        this.setState({ loading: false, error: e });
+      } else {
+        this.props.onDone();
+      }
+    });
+  }
+
+  render() {
+    let btnClass = '';
+    if (this.state.loading) {
+      btnClass = ' disabled';
+    }
+    return React.createElement(
+      'div',
+      { className: 'delete-pane' },
+      React.createElement(
+        'label',
+        null,
+        'Delete ',
+        this.props.service,
+        '?'
+      ),
+      React.createElement(
+        'div',
+        { className: 'buttons' },
+        React.createElement(
+          'button',
+          { className: 'delete-button' + btnClass,
+            onClick: () => this.handleDelete() },
+          'Delete'
+        ),
+        React.createElement(
+          'button',
+          { className: 'cancel-button' + btnClass,
+            onClick: () => this.props.onCancel() },
+          'Cancel'
+        )
+      ),
+      !this.state.error ? null : React.createElement(
+        'label',
+        { className: 'error' },
+        this.state.error
+      )
+    );
+  }
 }

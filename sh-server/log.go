@@ -59,6 +59,26 @@ func (l *Log) Add(service, msg string) (int, error) {
 	return record.ID, nil
 }
 
+// DeleteService deletes a service.
+// It fails if the service does not exist.
+func (l *Log) DeleteService(name string) error {
+	l.logLock.Lock()
+	defer l.logLock.Unlock()
+	if _, ok := l.perService[name]; !ok {
+		return errors.New("no such service: " + name)
+	}
+	delete(l.perService, name)
+	newLen := 0
+	for _, x := range l.allRecords {
+		if x.Service != name {
+			l.allRecords[newLen] = x
+			newLen++
+		}
+	}
+	l.allRecords = l.allRecords[:newLen]
+	return nil
+}
+
 // Overview returns the most recent log record per
 // service, sorted from most to least recent.
 func (l *Log) Overview() []LogRecord {
