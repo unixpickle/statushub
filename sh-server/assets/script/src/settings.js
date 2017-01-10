@@ -12,7 +12,7 @@ class Settings extends React.Component {
         confirm: ''
       },
       settingsFields: {
-        logInterval: 0
+        logSize: 0
       },
     };
     this._passwordReq = null;
@@ -49,14 +49,10 @@ class Settings extends React.Component {
 
   handleSaveSettings() {
     const fields = Object.assign({}, this.state.settingsFields);
-    if ('string' === typeof fields.logInterval) {
-      try {
-        fields.logInterval = parseInt(fields.logInterval);
-        if (isNaN(fields.logInterval)) {
-          throw 'nan';
-        }
-      } catch (e) {
-        this.setState({settings: {loading: false, error: 'invalid log interval'}});
+    if ('string' === typeof fields.logSize) {
+      fields.logSize = parseInt(fields.logSize);
+      if (isNaN(fields.logSize)) {
+        this.setState({settings: {loading: false, error: 'invalid log size'}});
         return;
       }
     }
@@ -121,10 +117,10 @@ class Settings extends React.Component {
 }
 
 function MainSettings(props) {
-  const handleChange = (e) => props.onChange('logInterval', e.target.value);
+  const handleChange = (e) => props.onChange('logSize', e.target.value);
   return (
     <div>
-      <SettingsField name="Log Interval" value={props.data.logInterval}
+      <SettingsField name="Log Size" value={props.data.logSize}
                      onChange={handleChange} />
       <SettingsAction text="Save" info={props.status} onAction={props.onSave} />
     </div>

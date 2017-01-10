@@ -125,7 +125,7 @@ func (s *Server) GetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	obj := map[string]interface{}{
-		"logInterval": s.Config.LogSize(),
+		"logSize": s.Config.LogSize(),
 	}
 	s.servePayload(w, obj)
 }
@@ -144,13 +144,13 @@ func (s *Server) SetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var prefObj struct {
-		LogInterval int `json:"logInterval"`
+		LogSize int `json:"logSize"`
 	}
 	if err := json.Unmarshal(contents, &prefObj); err != nil {
 		s.serveError(w, "JSON unmarshal: "+err.Error())
 		return
 	}
-	if err := s.Config.SetLogSize(prefObj.LogInterval); err != nil {
+	if err := s.Config.SetLogSize(prefObj.LogSize); err != nil {
 		s.serveError(w, "could not save settings")
 	} else {
 		s.servePayload(w, true)
