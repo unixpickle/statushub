@@ -1,6 +1,6 @@
 # StatusHub
 
-StatusHub is a system for pushing and viewing log messages in a unified place. It is designed to unify the outputs of numerous long-running scripts in one place.
+StatusHub is designed to unify the outputs of numerous long-running scripts in one place.
 
 For example, I train a lot of neural networks on various machines. Every minute or so, these networks compute a numerical "cost" indicating how well they are doing. With StatusHub, I can check on these networks from anywhere using the StatusHub web UI.
 
@@ -10,13 +10,13 @@ For example, I train a lot of neural networks on various machines. Every minute 
 
 First, you must have [Go installed and configured](https://golang.org/doc/install). You should also have `$GOPATH/bin` added to your shell's path.
 
-To download StatusHub with Go, do the following:
+To download StatusHub, do the following:
 
 ```
 $ go get -u github.com/unixpickle/statushub/...
 ```
 
-Now, you can run a StatusHub server like so:
+Now you can run a StatusHub server like so:
 
 ```
 $ sh-server -port=8080
