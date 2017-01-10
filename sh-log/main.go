@@ -40,8 +40,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Logging and echoing output...")
-
 	if len(os.Args) == 2 {
 		logStdin(client)
 		return

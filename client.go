@@ -1,3 +1,9 @@
+// Package statushub is a client for the StatusHub API.
+//
+// StatusHub is a service for consolidating log messages.
+// Essentially, you can have all of your long-running
+// scripts write to a single StatusHub host so that you
+// can easily check on their outputs.
 package statushub
 
 import (
