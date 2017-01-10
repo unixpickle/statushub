@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
@@ -15,8 +16,8 @@ const (
 
 func main() {
 	rootURL := os.Getenv(RootEnvVar)
-	if len(os.Args) != 3 || rootURL == "" {
-		fmt.Fprintln(os.Stderr, "Usage: sh-log <service> <msg>")
+	if (len(os.Args) != 3 && len(os.Args) != 2) || rootURL == "" {
+		fmt.Fprintln(os.Stderr, "Usage: sh-log <service> [msg]")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "Set the "+RootEnvVar+" environment variable")
 		fmt.Fprintln(os.Stderr, "to the URL of the StatusHub server")
@@ -39,11 +40,37 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Println("Logging and echoing output...")
+
+	if len(os.Args) == 2 {
+		logStdin(client)
+		return
+	}
+
 	if id, err := client.Add(os.Args[1], os.Args[2]); err != nil {
 		fmt.Fprintln(os.Stderr, "Log failed:", err)
 		os.Exit(1)
 	} else {
 		fmt.Println("Entry created with ID", id)
+	}
+}
+
+func logStdin(c *statushub.Client) {
+	r := bufio.NewReader(os.Stdin)
+	for {
+		line, err := r.ReadString('\n')
+		if len(line) == 0 && err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to read input:", err)
+			os.Exit(1)
+		}
+		if line[len(line)-1] == '\n' {
+			line = line[:len(line)-1]
+		}
+		if _, err := c.Add(os.Args[1], line); err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to log:", err)
+			os.Exit(1)
+		}
+		fmt.Println(line)
 	}
 }
 
