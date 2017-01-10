@@ -336,7 +336,7 @@ class Settings extends React.Component {
     this.setState({ password: { loading: true, error: null } });
     this._passwordReq = callAPI('chpass', this.state.passwordFields, err => {
       this._passwordReq = null;
-      this.setState({ password: { loading: false, error: err } });
+      this.setState({ password: { loading: false, error: err, done: true } });
     });
   }
 
@@ -353,7 +353,7 @@ class Settings extends React.Component {
     this.setState({ settings: { loading: true, error: null } });
     this._settingsReq = callAPI('setprefs', fields, err => {
       this._settingsReq = null;
-      this.setState({ settings: { loading: false, error: err } });
+      this.setState({ settings: { loading: false, error: err, done: true } });
     });
   }
 
@@ -449,6 +449,20 @@ function SettingsAction(props) {
     onAction = function () {};
     btnClass = 'disabled';
   }
+  let statusLabel = null;
+  if (info.error) {
+    statusLabel = React.createElement(
+      'label',
+      { className: 'error' },
+      info.error
+    );
+  } else if (info.done) {
+    statusLabel = React.createElement(
+      'label',
+      { className: 'success' },
+      'Setting saved'
+    );
+  }
   return React.createElement(
     'div',
     { className: 'settings-action' },
@@ -458,10 +472,6 @@ function SettingsAction(props) {
       props.text
     ),
     info.loading ? React.createElement(Loader, null) : null,
-    !info.error ? null : React.createElement(
-      'label',
-      { className: 'error' },
-      info.error
-    )
+    statusLabel
   );
 }

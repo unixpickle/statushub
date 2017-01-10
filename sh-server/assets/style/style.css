@@ -387,12 +387,17 @@ nav .cur {
 .settings-pane .settings-action button.disabled:hover {
   background-color: #b5dfea;
 }
-.settings-pane .settings-action .error {
+.settings-pane .settings-action label {
   display: block;
   clear: both;
   padding-top: 5px;
   text-align: right;
+}
+.settings-pane .settings-action .error {
   color: #ff0000;
+}
+.settings-pane .settings-action .success {
+  color: #65bcd4;
 }
 html,
 body {

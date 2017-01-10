@@ -43,7 +43,7 @@ class Settings extends React.Component {
     this.setState({password: {loading: true, error: null}});
     this._passwordReq = callAPI('chpass', this.state.passwordFields, (err) => {
       this._passwordReq = null;
-      this.setState({password: {loading: false, error: err}});
+      this.setState({password: {loading: false, error: err, done: true}});
     });
   }
 
@@ -60,7 +60,7 @@ class Settings extends React.Component {
     this.setState({settings: {loading: true, error: null}});
     this._settingsReq = callAPI('setprefs', fields, (err) => {
       this._settingsReq = null;
-      this.setState({settings: {loading: false, error: err}});
+      this.setState({settings: {loading: false, error: err, done: true}});
     });
   }
 
@@ -144,12 +144,17 @@ function SettingsAction(props) {
     onAction = function() {};
     btnClass = 'disabled';
   }
+  let statusLabel = null;
+  if (info.error) {
+    statusLabel = <label className="error">{info.error}</label>;
+  } else if (info.done) {
+    statusLabel = <label className="success">Setting saved</label>;
+  }
   return (
     <div className="settings-action">
       <button onClick={onAction} className={btnClass}>{props.text}</button>
       {(info.loading ? <Loader /> : null)}
-      {(!info.error ? null
-                    : <label className="error">{info.error}</label>)}
+      {statusLabel}
     </div>
   );
 }

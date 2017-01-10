@@ -4,6 +4,7 @@
 @settings-padding: 15px;
 @settings-section-spacing: @settings-field-margins;
 @error-text-color: #ff0000;
+@success-text-color: #65bcd4;
 
 .settings-pane {
   .pane();
@@ -78,12 +79,19 @@
       padding: 0 10px;
     }
 
-    .error {
+    label {
       display: block;
       clear: both;
       padding-top: @settings-field-margins;
       text-align: right;
+    }
+
+    .error {
       color: @error-text-color;
+    }
+
+    .success {
+      color: @success-text-color;
     }
   }
 }
