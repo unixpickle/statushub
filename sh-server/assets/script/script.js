@@ -382,8 +382,8 @@ class Settings extends React.Component {
         'div',
         { className: 'password-setter' },
         this.passwordField('Old password', 'old'),
-        this.passwordField('New password', 'new'),
         this.passwordField('Confirm password', 'confirm'),
+        this.passwordField('New password', 'new'),
         React.createElement(SettingsAction, { text: 'Change Password', info: this.state.password,
           onAction: () => this.handleChangePassword() })
       ),

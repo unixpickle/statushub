@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -56,6 +54,7 @@ func main() {
 	http.HandleFunc("/logout", server.Logout)
 	http.HandleFunc("/api/getprefs", server.GetPrefsAPI)
 	http.HandleFunc("/api/setprefs", server.SetPrefsAPI)
+	http.HandleFunc("/api/chpass", server.ChpassAPI)
 	http.Handle("/assets/", http.StripPrefix("/assets/",
 		http.FileServer(http.Dir(assetPath))))
 
@@ -116,69 +115,6 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	sess.Values["authenticated"] = false
 	sess.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-// GetPrefsAPI serves the API to view preferences.
-func (s *Server) GetPrefsAPI(w http.ResponseWriter, r *http.Request) {
-	disableCache(w)
-	if !s.authOrError(w, r) {
-		return
-	}
-	obj := map[string]interface{}{
-		"logSize": s.Config.LogSize(),
-	}
-	s.servePayload(w, obj)
-}
-
-// SetPrefsAPI serves the API to set preferences.
-func (s *Server) SetPrefsAPI(w http.ResponseWriter, r *http.Request) {
-	disableCache(w)
-	if !s.authOrError(w, r) {
-		return
-	}
-
-	contents, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var prefObj struct {
-		LogSize int `json:"logSize"`
-	}
-	if err := json.Unmarshal(contents, &prefObj); err != nil {
-		s.serveError(w, "JSON unmarshal: "+err.Error())
-		return
-	}
-	if err := s.Config.SetLogSize(prefObj.LogSize); err != nil {
-		s.serveError(w, "could not save settings")
-	} else {
-		s.servePayload(w, true)
-	}
-}
-
-func (s *Server) authOrError(w http.ResponseWriter, r *http.Request) bool {
-	if !s.authenticated(r) {
-		s.serveError(w, "not authenticated")
-		return false
-	}
-	return true
-}
-
-func (s *Server) serveError(w http.ResponseWriter, msg string) {
-	pkt := map[string]string{"error": msg}
-	data, _ := json.Marshal(pkt)
-	w.Write(data)
-}
-
-func (s *Server) servePayload(w http.ResponseWriter, msg interface{}) {
-	pkt := map[string]interface{}{"data": msg}
-	data, err := json.Marshal(pkt)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else {
-		w.Write(data)
-	}
 }
 
 func (s *Server) authenticated(r *http.Request) bool {
