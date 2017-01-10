@@ -28,6 +28,7 @@ func (s *Server) SetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 	if err := s.Config.SetLogSize(prefObj.LogSize); err != nil {
 		s.serveError(w, "could not save settings")
 	} else {
+		s.Log.LogSizeUpdated()
 		s.servePayload(w, true)
 	}
 }
@@ -54,6 +55,56 @@ func (s *Server) ChpassAPI(w http.ResponseWriter, r *http.Request) {
 		s.serveError(w, "could not save settings")
 	} else {
 		s.servePayload(w, true)
+	}
+}
+
+// AddAPI serves the API for adding a log entry.
+func (s *Server) AddAPI(w http.ResponseWriter, r *http.Request) {
+	var obj struct {
+		Service string `json:"service"`
+		Message string `json:"message"`
+	}
+	if !s.processAPICall(w, r, &obj) {
+		return
+	}
+	id, err := s.Log.Add(obj.Service, obj.Message)
+	if err != nil {
+		s.serveError(w, err.Error())
+	} else {
+		s.servePayload(w, id)
+	}
+}
+
+// OverviewAPI serves the API for seeing the log overview.
+func (s *Server) OverviewAPI(w http.ResponseWriter, r *http.Request) {
+	if !s.processAPICall(w, r, nil) {
+		return
+	}
+	s.servePayload(w, s.Log.Overview())
+}
+
+// FullLogAPI serves the API for seeing the entire log.
+func (s *Server) FullLogAPI(w http.ResponseWriter, r *http.Request) {
+	if !s.processAPICall(w, r, nil) {
+		return
+	}
+	s.servePayload(w, s.Log.FullLog())
+}
+
+// ServiceLogAPI serves the API for seeing the log of a
+// specific service.
+func (s *Server) ServiceLogAPI(w http.ResponseWriter, r *http.Request) {
+	var obj struct {
+		Service string `json:"service"`
+	}
+	if !s.processAPICall(w, r, &obj) {
+		return
+	}
+	records, err := s.Log.ServiceLog(obj.Service)
+	if err != nil {
+		s.serveError(w, err.Error())
+	} else {
+		s.servePayload(w, records)
 	}
 }
 

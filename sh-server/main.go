@@ -42,6 +42,7 @@ func main() {
 	}
 	server := &Server{
 		Config:   cfg,
+		Log:      NewLog(cfg),
 		AssetDir: assetPath,
 		Sessions: sessions.NewCookieStore(securecookie.GenerateRandomKey(16),
 			securecookie.GenerateRandomKey(16)),
@@ -55,6 +56,10 @@ func main() {
 	http.HandleFunc("/api/getprefs", server.GetPrefsAPI)
 	http.HandleFunc("/api/setprefs", server.SetPrefsAPI)
 	http.HandleFunc("/api/chpass", server.ChpassAPI)
+	http.HandleFunc("/api/add", server.AddAPI)
+	http.HandleFunc("/api/overview", server.OverviewAPI)
+	http.HandleFunc("/api/serviceLog", server.ServiceLogAPI)
+	http.HandleFunc("/api/fullLog", server.FullLogAPI)
 	http.Handle("/assets/", http.StripPrefix("/assets/",
 		http.FileServer(http.Dir(assetPath))))
 
@@ -66,6 +71,7 @@ func main() {
 
 type Server struct {
 	Config     *Config
+	Log        *Log
 	AssetDir   string
 	Sessions   *sessions.CookieStore
 	LoginLimit Limiter
