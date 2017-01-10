@@ -1,7 +1,11 @@
 function LogScene(props) {
   const info = props.info;
   if (info.entries) {
-    return <LogPane items={info.entries} onClick={props.onClick} />;
+    if (info.entries.length === 0) {
+      return <div className="log-empty">No log entries</div>;
+    } else {
+      return <LogPane items={info.entries} onClick={props.onClick} />;
+    }
   } else if (info.error) {
     return (
       <div className="log-scene-error">

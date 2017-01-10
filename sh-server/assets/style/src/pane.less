@@ -38,11 +38,15 @@
   }
 }
 
-.error-pane {
+.message-pane {
   .pane();
   box-sizing: border-box;
   padding: 15px;
   text-align: center;
+}
+
+.error-pane {
+  .message-pane();
   background-color: #ffd6d6;
 
   label {

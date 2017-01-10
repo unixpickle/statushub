@@ -42,6 +42,26 @@
     left: calc(50% -  300px);
   }
 }
+.message-pane {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+}
+@media (max-width: 620px) {
+  .message-pane {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .message-pane {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
+}
 .error-pane {
   background-color: white;
   position: absolute;
@@ -146,6 +166,27 @@
 .log-scene-error label {
   font-style: italic;
   color: #555;
+}
+.log-empty {
+  background-color: white;
+  position: absolute;
+  top: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+  color: #555;
+}
+@media (max-width: 620px) {
+  .log-empty {
+    width: calc(100% -  20px);
+    left: 10px;
+  }
+}
+@media (min-width: 620px) {
+  .log-empty {
+    width: 600px;
+    left: calc(50% -  300px);
+  }
 }
 .log-pane {
   background-color: white;
@@ -328,6 +369,7 @@ nav .cur {
 }
 .settings-pane .settings-field label,
 .settings-pane .settings-field input {
+  color: #555;
   width: calc(50% - 5px);
   height: 30px;
 }

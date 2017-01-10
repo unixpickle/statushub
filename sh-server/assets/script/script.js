@@ -80,7 +80,6 @@ class Root extends React.Component {
   }
 
   gotSceneData(name, err, data) {
-    console.log('yo', arguments);
     const obj = {};
     obj[name] = { error: err, entries: data };
     if (name === this.state.page) {
@@ -173,7 +172,6 @@ function callAPI(name, params, cb) {
     if (req.readyState === 4) {
       try {
         const obj = JSON.parse(req.responseText);
-        console.log(obj);
         if (obj.error) {
           cb(obj.error, null);
         } else {
@@ -197,7 +195,15 @@ function Loader(props) {
 function LogScene(props) {
   const info = props.info;
   if (info.entries) {
-    return React.createElement(LogPane, { items: info.entries, onClick: props.onClick });
+    if (info.entries.length === 0) {
+      return React.createElement(
+        'div',
+        { className: 'log-empty' },
+        'No log entries'
+      );
+    } else {
+      return React.createElement(LogPane, { items: info.entries, onClick: props.onClick });
+    }
   } else if (info.error) {
     return React.createElement(
       'div',
