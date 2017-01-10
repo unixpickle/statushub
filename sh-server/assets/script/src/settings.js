@@ -48,8 +48,21 @@ class Settings extends React.Component {
   }
 
   handleSaveSettings() {
+    const fields = Object.assign({}, this.state.settingsFields);
+    if ('string' === typeof fields.logInterval) {
+      try {
+        fields.logInterval = parseInt(fields.logInterval);
+        if (isNaN(fields.logInterval)) {
+          throw 'nan';
+        }
+      } catch (e) {
+        this.setState({settings: {loading: false, error: 'invalid log interval'}});
+        return;
+      }
+    }
+
     this.setState({settings: {loading: true, error: null}});
-    this._settingsReq = callAPI('setprefs', this.state.settingsFields, (err) => {
+    this._settingsReq = callAPI('setprefs', fields, (err) => {
       this._settingsReq = null;
       this.setState({settings: {loading: false, error: err}});
     });

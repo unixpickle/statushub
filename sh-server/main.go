@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,7 +54,8 @@ func main() {
 	http.HandleFunc("/", server.Root)
 	http.HandleFunc("/login", server.Login)
 	http.HandleFunc("/logout", server.Logout)
-	http.HandleFunc("/api", server.API)
+	http.HandleFunc("/api/getprefs", server.GetPrefsAPI)
+	http.HandleFunc("/api/setprefs", server.SetPrefsAPI)
 	http.Handle("/assets/", http.StripPrefix("/assets/",
 		http.FileServer(http.Dir(assetPath))))
 
@@ -115,16 +118,67 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// API serves the programmatic API endpoint.
-func (s *Server) API(w http.ResponseWriter, r *http.Request) {
+// GetPrefsAPI serves the API to view preferences.
+func (s *Server) GetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 	disableCache(w)
-	if !s.authenticated(r) {
-		http.Error(w, "not authenticated", http.StatusForbidden)
+	if !s.authOrError(w, r) {
+		return
+	}
+	obj := map[string]interface{}{
+		"logInterval": s.Config.LogSize(),
+	}
+	s.servePayload(w, obj)
+}
+
+// SetPrefsAPI serves the API to set preferences.
+func (s *Server) SetPrefsAPI(w http.ResponseWriter, r *http.Request) {
+	disableCache(w)
+	if !s.authOrError(w, r) {
 		return
 	}
 
-	// TODO: handle API here.
-	w.Write([]byte("TODO: handle API here"))
+	contents, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var prefObj struct {
+		LogInterval int `json:"logInterval"`
+	}
+	if err := json.Unmarshal(contents, &prefObj); err != nil {
+		s.serveError(w, "JSON unmarshal: "+err.Error())
+		return
+	}
+	if err := s.Config.SetLogSize(prefObj.LogInterval); err != nil {
+		s.serveError(w, "could not save settings")
+	} else {
+		s.servePayload(w, true)
+	}
+}
+
+func (s *Server) authOrError(w http.ResponseWriter, r *http.Request) bool {
+	if !s.authenticated(r) {
+		s.serveError(w, "not authenticated")
+		return false
+	}
+	return true
+}
+
+func (s *Server) serveError(w http.ResponseWriter, msg string) {
+	pkt := map[string]string{"error": msg}
+	data, _ := json.Marshal(pkt)
+	w.Write(data)
+}
+
+func (s *Server) servePayload(w http.ResponseWriter, msg interface{}) {
+	pkt := map[string]interface{}{"data": msg}
+	data, err := json.Marshal(pkt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		w.Write(data)
+	}
 }
 
 func (s *Server) authenticated(r *http.Request) bool {
