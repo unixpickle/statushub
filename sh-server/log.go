@@ -73,7 +73,7 @@ func (l *Log) Overview() []LogRecord {
 }
 
 // FullLog returns all of the log records, sorted from
-// least to most recent.
+// most to least recent.
 func (l *Log) FullLog() []LogRecord {
 	l.logLock.RLock()
 	res := append([]LogRecord{}, l.allRecords...)
@@ -82,7 +82,7 @@ func (l *Log) FullLog() []LogRecord {
 }
 
 // ServiceLog returns the log records for a particular
-// service, sorted from least to most recent.
+// service, sorted from most to least recent.
 // It fails if there are no log records for the service.
 func (l *Log) ServiceLog(name string) ([]LogRecord, error) {
 	l.logLock.RLock()

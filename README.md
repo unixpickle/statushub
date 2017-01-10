@@ -8,4 +8,3 @@ This will be a system for pushing and viewing status messages. For example, I tr
  * Android Wear application
  * Use a grid layout for the "Overview" page
  * Display log message dates
- * Implement UI for empty log
