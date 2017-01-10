@@ -23,7 +23,6 @@ class Root extends React.Component {
     this._client.onOverview = this.gotSceneData.bind(this, 'overview');
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
     this._client.onFullLog = this.gotSceneData.bind(this, 'fullLog');
-    this._client.onSettings = this.gotSceneData.bind(this, 'settings');
 
     window.onpopstate = (e) => {
       this.setState(e.state, () => this.fetchPageData());
@@ -73,9 +72,6 @@ class Root extends React.Component {
       break;
     case 'fullLog':
       this._client.fetchFullLog();
-      break;
-    case 'settings':
-      this._client.fetchSettings();
       break;
     case 'serviceLog':
       this._client.fetchServiceLog(this.state.serviceLogReq);

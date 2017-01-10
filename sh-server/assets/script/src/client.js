@@ -4,43 +4,21 @@ class Client {
   }
 
   fetchOverview() {
-    setTimeout(() => {
-      this.onOverview(null, [
-        {serviceName: 'FooService', id: 0, message: 'deleting /foo/bar'},
-        {serviceName: 'NetService', id: 1, message: 'Current cost: 0.05'},
-        {serviceName: 'NetService1', id: 2, message: 'Current cost: 0.92'}
-      ]);
-    }, 1000);
+    callAPI('overview', {}, (e, d) => this.onOverview(e, d));
   }
 
   fetchServiceLog(name) {
-    setTimeout(() => {
-      this.onServiceLog(null, [
-        {serviceName: name, id: 4, message: 'This is a log message.'},
-        {serviceName: name, id: 5, message: 'The quick brown fox.'},
-      ]);
-    }, 1000);
-  }
-
-  fetchSettings() {
-    setTimeout(() => {
-      this.onSettings(null, {
-        maxLog: 1000
-      });
-    });
+    callAPI('serviceLog', {service: name}, (e, d) => this.onServiceLog(e, d));
   }
 
   fetchFullLog() {
-    setTimeout(() => {
-      this.onFullLog('network failure', null);
-    }, 1000);
+    callAPI('fullLog', {}, (e, d) => this.onFullLog(e, d));
   }
 
   close() {
     this.onOverview = function() {};
     this.onServiceLog = function() {};
     this.onFullLog = function() {};
-    this.onSettings = function() {};
   }
 }
 

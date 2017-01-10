@@ -24,6 +24,8 @@ type Log struct {
 	allRecords []LogRecord
 }
 
+// NewLog creates a log which depends on a configuration
+// to get the maximum log size.
 func NewLog(cfg *Config) *Log {
 	return &Log{
 		config:     cfg,
@@ -58,7 +60,7 @@ func (l *Log) Add(service, msg string) (int, error) {
 }
 
 // Overview returns the most recent log record per
-// service, sorter from least to most recent.
+// service, sorted from most to least recent.
 func (l *Log) Overview() []LogRecord {
 	l.logLock.RLock()
 	var entries []LogRecord
@@ -76,7 +78,7 @@ func (l *Log) FullLog() []LogRecord {
 	l.logLock.RLock()
 	res := append([]LogRecord{}, l.allRecords...)
 	l.logLock.RUnlock()
-	return res
+	return reverseLog(res)
 }
 
 // ServiceLog returns the log records for a particular
@@ -89,7 +91,7 @@ func (l *Log) ServiceLog(name string) ([]LogRecord, error) {
 	if !ok {
 		return nil, errors.New("unknown service: " + name)
 	}
-	return append([]LogRecord{}, entries...), nil
+	return reverseLog(entries), nil
 }
 
 // LogSizeUpdated directs the log to delete log records as
@@ -116,6 +118,14 @@ func trimLog(log []LogRecord, maxSize int) []LogRecord {
 	return log[:maxSize]
 }
 
+func reverseLog(log []LogRecord) []LogRecord {
+	res := make([]LogRecord, len(log))
+	for i, x := range log {
+		res[len(res)-(i+1)] = x
+	}
+	return res
+}
+
 type logIDSorter []LogRecord
 
 func (l logIDSorter) Len() int {
@@ -127,5 +137,5 @@ func (l logIDSorter) Swap(i, j int) {
 }
 
 func (l logIDSorter) Less(i, j int) bool {
-	return l[i].ID < l[j].ID
+	return l[i].ID > l[j].ID
 }

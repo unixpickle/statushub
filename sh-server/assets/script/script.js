@@ -23,7 +23,6 @@ class Root extends React.Component {
     this._client.onOverview = this.gotSceneData.bind(this, 'overview');
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
     this._client.onFullLog = this.gotSceneData.bind(this, 'fullLog');
-    this._client.onSettings = this.gotSceneData.bind(this, 'settings');
 
     window.onpopstate = e => {
       this.setState(e.state, () => this.fetchPageData());
@@ -74,9 +73,6 @@ class Root extends React.Component {
       case 'fullLog':
         this._client.fetchFullLog();
         break;
-      case 'settings':
-        this._client.fetchSettings();
-        break;
       case 'serviceLog':
         this._client.fetchServiceLog(this.state.serviceLogReq);
         break;
@@ -84,6 +80,7 @@ class Root extends React.Component {
   }
 
   gotSceneData(name, err, data) {
+    console.log('yo', arguments);
     const obj = {};
     obj[name] = { error: err, entries: data };
     if (name === this.state.page) {
@@ -149,36 +146,21 @@ class Client {
   }
 
   fetchOverview() {
-    setTimeout(() => {
-      this.onOverview(null, [{ serviceName: 'FooService', id: 0, message: 'deleting /foo/bar' }, { serviceName: 'NetService', id: 1, message: 'Current cost: 0.05' }, { serviceName: 'NetService1', id: 2, message: 'Current cost: 0.92' }]);
-    }, 1000);
+    callAPI('overview', {}, (e, d) => this.onOverview(e, d));
   }
 
   fetchServiceLog(name) {
-    setTimeout(() => {
-      this.onServiceLog(null, [{ serviceName: name, id: 4, message: 'This is a log message.' }, { serviceName: name, id: 5, message: 'The quick brown fox.' }]);
-    }, 1000);
-  }
-
-  fetchSettings() {
-    setTimeout(() => {
-      this.onSettings(null, {
-        maxLog: 1000
-      });
-    });
+    callAPI('serviceLog', { service: name }, (e, d) => this.onServiceLog(e, d));
   }
 
   fetchFullLog() {
-    setTimeout(() => {
-      this.onFullLog('network failure', null);
-    }, 1000);
+    callAPI('fullLog', {}, (e, d) => this.onFullLog(e, d));
   }
 
   close() {
     this.onOverview = function () {};
     this.onServiceLog = function () {};
     this.onFullLog = function () {};
-    this.onSettings = function () {};
   }
 }
 
@@ -191,6 +173,7 @@ function callAPI(name, params, cb) {
     if (req.readyState === 4) {
       try {
         const obj = JSON.parse(req.responseText);
+        console.log(obj);
         if (obj.error) {
           cb(obj.error, null);
         } else {

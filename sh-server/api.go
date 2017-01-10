@@ -80,7 +80,7 @@ func (s *Server) OverviewAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.processAPICall(w, r, nil) {
 		return
 	}
-	s.servePayload(w, s.Log.Overview())
+	s.serveLog(w, s.Log.Overview())
 }
 
 // FullLogAPI serves the API for seeing the entire log.
@@ -88,7 +88,7 @@ func (s *Server) FullLogAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.processAPICall(w, r, nil) {
 		return
 	}
-	s.servePayload(w, s.Log.FullLog())
+	s.serveLog(w, s.Log.FullLog())
 }
 
 // ServiceLogAPI serves the API for seeing the log of a
@@ -104,7 +104,7 @@ func (s *Server) ServiceLogAPI(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.serveError(w, err.Error())
 	} else {
-		s.servePayload(w, records)
+		s.serveLog(w, records)
 	}
 }
 
@@ -126,6 +126,14 @@ func (s *Server) processAPICall(w http.ResponseWriter, r *http.Request, inData i
 		}
 	}
 	return true
+}
+
+func (s *Server) serveLog(w http.ResponseWriter, l []LogRecord) {
+	if l == nil {
+		s.servePayload(w, []LogRecord{})
+	} else {
+		s.servePayload(w, l)
+	}
 }
 
 func (s *Server) serveError(w http.ResponseWriter, msg string) {
