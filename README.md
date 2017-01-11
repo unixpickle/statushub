@@ -26,14 +26,29 @@ You can replace the port with whatever you like. By default, the configuration w
 
 You can now view the StatusHub web UI in a browser. If you used the exact command above, the URL `http://localhost:8080` will work. At first, you will be prompted for a password. Once you have entered one, you are ready to view your logs.
 
-To send the output of a command to StatusHub, you can use the `sh-log` command as follows:
+You can use the `sh-log` command to post log messages. First, setup your environment. The `STATUSHUB_PASS` variable is optional, but it saves you from having to type the password every time you run `sh-log`.
 
 ```
 $ export STATUSHUB_ROOT=http://localhost:8080
-$ my_command 2>&1 | sh-log ServiceName
+$ export STATUSHUB_PASS=myPassword
 ```
 
-Optionally, you can set the `STATUSHUB_PASS` environment variable to avoid having to enter the StatusHub password every time you run `sh-log`. Note the `2>&1`, which pipes the command's standard error to standard output. Without this, only the standard output will be logged.
+By default, `sh-log` logs its standard input, where each line is treated as a different message. The only argument is the service name, which you can set to be anything you like:
+
+```
+$ sh-log "Service Name"
+Line one is a message.
+Message 2
+^D
+```
+
+To send the output of a command to StatusHub, you could theoretically use a UNIX pipe. However, it is much simpler to pass the command arguments to `sh-log` as follows in this example:
+
+```
+$ sh-log "Service Name" ping google.com
+```
+
+If you still want to use a UNIX pipe, be aware of the following things. First, pipes are buffered, so lines may not be logged right away. Second, you have to make sure that standard error gets sent through the pipe. Third, interrupts like the one caused by `Ctrl+C` are sent to the entire pipeline, which may prevent your command from doing a graceful shutdown.
 
 # Development
 
