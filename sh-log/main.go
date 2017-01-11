@@ -66,7 +66,6 @@ func logStdin(c *statushub.Client) {
 		}
 		if _, err := c.Add(os.Args[1], line); err != nil {
 			fmt.Fprintln(os.Stderr, "Failed to log:", err)
-			os.Exit(1)
 		}
 		fmt.Println(line)
 	}
