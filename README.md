@@ -29,7 +29,7 @@ You can now view the StatusHub web UI in a browser. If you used the exact comman
 To send the output of a command to StatusHub, you can use the `sh-log` command as follows:
 
 ```
-$ export STATUSHUB_HOST=http://localhost:8080
+$ export STATUSHUB_ROOT=http://localhost:8080
 $ my_command 2>&1 | sh-log ServiceName
 ```
 
