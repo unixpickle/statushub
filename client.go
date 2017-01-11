@@ -96,14 +96,16 @@ func (c *Client) apiCall(name string, msg, reply interface{}) error {
 		Error string      `json:"error"`
 	}
 	if err := json.Unmarshal(contents, &respObj); err != nil {
-		return err
+		return errors.New(err.Error() + ": " + string(contents))
 	}
 	if respObj.Error != "" {
 		return errors.New("remote error: " + respObj.Error)
 	}
 	if reply != nil {
 		dataJSON, _ := json.Marshal(respObj.Data)
-		return json.Unmarshal(dataJSON, reply)
+		if err := json.Unmarshal(dataJSON, reply); err != nil {
+			return errors.New("unmarshal data: " + err.Error())
+		}
 	}
 	return nil
 }
