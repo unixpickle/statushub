@@ -48,7 +48,7 @@ To send the output of a command to StatusHub, you could theoretically use a UNIX
 $ sh-log "Service Name" ping google.com
 ```
 
-If you still want to use a UNIX pipe, be aware of the following things. First, pipes are buffered, so lines may not be logged right away. Second, you have to make sure that standard error gets sent through the pipe. Third, interrupts like the one caused by `Ctrl+C` are sent to the entire pipeline, which may prevent your command from doing a graceful shutdown.
+If you still want to use a UNIX pipe, be aware of the following things. First, pipes are buffered, so lines may not be logged right away. Second, you have to make sure that standard error gets sent through the pipe. Third, interrupts like the one caused by `Ctrl+C` are sent to the entire pipeline, which may prevent your command from doing a graceful shutdown since `sh-log` may die first.
 
 # Development
 

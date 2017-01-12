@@ -81,8 +81,7 @@ func logCommand(c *statushub.Client, name string, args ...string) {
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
-		for sig := range c {
-			cmd.Process.Signal(sig)
+		for _ = range c {
 		}
 	}()
 
