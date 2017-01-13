@@ -4,7 +4,7 @@ StatusHub is designed to unify the outputs of numerous long-running scripts in o
 
 For example, I train a lot of neural networks on various machines. Every minute or so, these networks compute a numerical "cost" indicating how well they are doing. With StatusHub, I can check on these networks from anywhere using the StatusHub web UI.
 
-![Web UI screenshot](screenshot.png)
+![Web UI screenshot](overview_screenshot.png)
 
 # Usage
 
