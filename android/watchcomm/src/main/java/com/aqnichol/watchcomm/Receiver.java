@@ -2,6 +2,7 @@ package com.aqnichol.watchcomm;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageApi;
@@ -15,8 +16,9 @@ import java.util.ArrayList;
  * messages from an external device.
  */
 public class Receiver {
+    private final ArrayList<MessageEvent> queue = new ArrayList<MessageEvent>();
+    private Context context;
     private GoogleApiClient client;
-    private ArrayList<MessageEvent> queue;
     private MessageApi.MessageListener listener;
 
     /**
@@ -25,32 +27,35 @@ public class Receiver {
      * @param ctx The context to use for google APIs.
      */
     public Receiver(Context ctx) {
+        context = ctx;
         listener = new MessageApi.MessageListener() {
             @Override
             public void onMessageReceived(MessageEvent messageEvent) {
                 pushMessage(messageEvent);
             }
         };
-        client = new GoogleApiClient.Builder(ctx)
-                .addApi(Wearable.API)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(Bundle bundle) {
-                        Wearable.MessageApi.addListener(client, listener);
-                    }
-
-                    @Override
-                    public void onConnectionSuspended(int i) {
-                        Wearable.MessageApi.removeListener(client, listener);
-                    }
-                })
-                .build();
     }
 
     /**
      * Connect the receiver asynchronously.
      */
     public void connect() {
+        if (client == null) {
+            client = new GoogleApiClient.Builder(context)
+                    .addApi(Wearable.API)
+                    .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                        @Override
+                        public void onConnected(Bundle bundle) {
+                            Wearable.MessageApi.addListener(client, listener);
+                        }
+
+                        @Override
+                        public void onConnectionSuspended(int i) {
+                            Wearable.MessageApi.removeListener(client, listener);
+                        }
+                    })
+                    .build();
+        }
         client.connect();
     }
 
@@ -69,8 +74,10 @@ public class Receiver {
      * queue, so that poll() will only see messages which
      * were received after clearQueue() was called.
      */
-    public synchronized void clearQueue() {
-        queue.clear();
+    public void clearQueue() {
+        synchronized (queue) {
+            queue.clear();
+        }
     }
 
     /**
@@ -82,37 +89,34 @@ public class Receiver {
      */
     public MessageEvent poll(long timeoutMs) throws CommException {
         long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() > startTime + timeoutMs) {
-            MessageEvent e = popMessage();
-            if (e != null) {
-                return e;
+        while (System.currentTimeMillis() < startTime + timeoutMs) {
+            if (!client.isConnected()) {
+                throw new CommException("not connected to Play Services");
             }
-            long remaining = timeoutMs + startTime - System.currentTimeMillis();
-            if (remaining < 0) {
-                break;
-            }
-            try {
-                wait(remaining);
-            } catch (InterruptedException e1) {
+            synchronized (queue) {
+                if (!queue.isEmpty()) {
+                    MessageEvent res = queue.get(0);
+                    queue.remove(0);
+                    return res;
+                }
+                long remaining = timeoutMs + startTime - System.currentTimeMillis();
+                if (remaining < 0) {
+                    return null;
+                }
+                try {
+                    queue.wait(remaining);
+                } catch (InterruptedException e1) {
+                }
             }
         }
         return null;
     }
 
-    private synchronized void pushMessage(MessageEvent m) {
-        queue.add(m);
-        notifyAll();
+    private void pushMessage(MessageEvent m) {
+        synchronized (queue) {
+            queue.add(m);
+            queue.notifyAll();
+        }
     }
 
-    private synchronized MessageEvent popMessage() throws CommException {
-        if (!client.isConnected()) {
-            throw new CommException("not connected to Play Services");
-        }
-        if (queue.isEmpty()) {
-            return null;
-        }
-        MessageEvent res = queue.get(0);
-        queue.remove(0);
-        return res;
-    }
 }

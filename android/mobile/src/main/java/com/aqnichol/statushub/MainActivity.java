@@ -2,6 +2,7 @@ package com.aqnichol.statushub;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,7 +22,6 @@ public class MainActivity extends AppCompatActivity {
 
     private EditText rootURL;
     private EditText password;
-    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,57 +31,25 @@ public class MainActivity extends AppCompatActivity {
         final Button b = (Button)findViewById(R.id.saveButton);
         b.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                save();
+                saveSettings();
             }
         });
         password = (EditText)findViewById(R.id.password);
         rootURL = (EditText)findViewById(R.id.rootURL);
-        client = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(Bundle connectionHint) {
-                        Log.d(TAG, "onConnected: " + connectionHint);
-                        // Now you can use the Data Layer API
-                    }
-
-                    @Override
-                    public void onConnectionSuspended(int cause) {
-                        Log.d(TAG, "onConnectionSuspended: " + cause);
-                    }
-                })
-                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                    @Override
-                    public void onConnectionFailed(ConnectionResult result) {
-                        Log.d(TAG, "onConnectionFailed: " + result);
-                    }
-                })
-                .addApi(Wearable.API)
-                .build();
-        client.connect();
+        loadSettings();
     }
 
-    private void save() {
-        if (!client.isConnected()) {
-            errorDialog(R.string.ps_disconn_error);
-            return;
-        }
-        PutDataMapRequest req = PutDataMapRequest.create("/shhost");
-        req.getDataMap().putString("rootURL", rootURL.getText().toString());
-        req.getDataMap().putString("password", password.getText().toString());
-        PutDataRequest preq = req.asPutDataRequest();
-        Wearable.DataApi.putDataItem(client, preq);
+    private void loadSettings() {
+        SharedPreferences prefs = getSharedPreferences("shhost", 0);
+        rootURL.setText(prefs.getString("rootURL", ""));
+        password.setText(prefs.getString("password", ""));
     }
 
-    private void errorDialog(int msgResource) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(msgResource);
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        AlertDialog d = builder.create();
-        d.show();
+    private void saveSettings() {
+        SharedPreferences prefs = getSharedPreferences("shhost", 0);
+        SharedPreferences.Editor e = prefs.edit();
+        e.putString("rootURL", rootURL.getText().toString());
+        e.putString("password", password.getText().toString());
+        e.commit();
     }
 }

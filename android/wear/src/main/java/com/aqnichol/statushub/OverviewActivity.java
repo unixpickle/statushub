@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.aqnichol.watchcomm.CommException;
 import com.aqnichol.watchcomm.Sender;
@@ -21,6 +22,7 @@ public class OverviewActivity extends Activity implements WatchViewStub.OnLayout
 
     private Button refreshButton;
     private LinearLayout listView;
+    private TextView errView;
     private Receiver receiver = new Receiver(this);
 
     @Override
@@ -53,18 +55,20 @@ public class OverviewActivity extends Activity implements WatchViewStub.OnLayout
                 refresh();
             }
         });
-
+        errView = (TextView)findViewById(R.id.errmsg);
         listView = (LinearLayout)findViewById(R.id.overview_list);
         listView.addView(new LogEntry(this, "Service", "Message here."));
         listView.addView(new LogEntry(this, "Service", "The quick brown fox jumps over the lazy yet long log message."));
     }
 
     private void refresh() {
+        refreshButton.setEnabled(false);
         new Thread(new Runnable() {
             @Override
             public void run() {
                 Sender s = new Sender(getApplicationContext());
                 try {
+                    receiver.clearQueue();
                     s.connect();
                     s.sendMessage("/refresh", null);
                     MessageEvent evt = receiver.poll(REFRESH_TIMEOUT);
@@ -87,16 +91,17 @@ public class OverviewActivity extends Activity implements WatchViewStub.OnLayout
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                refreshButton.setEnabled(false);
+                refreshButton.setEnabled(true);
             }
         });
     }
 
-    private void displayErrorMessage(String message) {
+    private void displayErrorMessage(final String message) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                // TODO: show an error message here.
+                errView.setVisibility(View.VISIBLE);
+                errView.setText(message);
             }
         });
     }
@@ -106,6 +111,7 @@ public class OverviewActivity extends Activity implements WatchViewStub.OnLayout
             @Override
             public void run() {
                 // TODO: process list from response.
+                errView.setVisibility(View.GONE);
                 listView.addView(
                         new LogEntry(getApplicationContext(), "Yay", "Refreshed")
                 );
