@@ -1,0 +1,4 @@
+<resources>
+    <declare-styleable name="LogEntry">
+    </declare-styleable>
+</resources>
