@@ -8,6 +8,7 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -66,5 +67,9 @@ public class Sender {
         if (!r.getStatus().isSuccess()) {
             throw new CommException("failed to send message");
         }
+    }
+
+    public void sendMessage(String node, String path, String data) throws CommException {
+        sendMessage(node, path, data.getBytes(StandardCharsets.UTF_8));
     }
 }

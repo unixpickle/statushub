@@ -10,11 +10,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.aqnichol.watchcomm.CommException;
+import com.aqnichol.watchcomm.LogEntries;
 import com.aqnichol.watchcomm.Sender;
 import com.aqnichol.watchcomm.Receiver;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Wearable;
+
+import org.json.JSONException;
+
+import java.nio.charset.StandardCharsets;
 
 public class OverviewActivity extends Activity implements WatchViewStub.OnLayoutInflatedListener {
 
@@ -57,8 +62,7 @@ public class OverviewActivity extends Activity implements WatchViewStub.OnLayout
         });
         errView = (TextView)findViewById(R.id.errmsg);
         listView = (LinearLayout)findViewById(R.id.overview_list);
-        listView.addView(new LogEntry(this, "Service", "Message here."));
-        listView.addView(new LogEntry(this, "Service", "The quick brown fox jumps over the lazy yet long log message."));
+        listView.addView(new LogEntry(this, "No messages", "Refresh to see them."));
     }
 
     private void refresh() {
@@ -74,6 +78,9 @@ public class OverviewActivity extends Activity implements WatchViewStub.OnLayout
                     MessageEvent evt = receiver.poll(REFRESH_TIMEOUT);
                     if (evt == null) {
                         displayErrorMessage("connection timeout");
+                    } else if (evt.getPath().equals("/error")) {
+                        String msg = new String(evt.getData(), StandardCharsets.UTF_8);
+                        displayErrorMessage(msg);
                     } else {
                         displayList(evt);
                     }
@@ -106,16 +113,28 @@ public class OverviewActivity extends Activity implements WatchViewStub.OnLayout
         });
     }
 
-    private void displayList(MessageEvent evt) {
+    private void displayList(final MessageEvent evt) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                // TODO: process list from response.
-                errView.setVisibility(View.GONE);
-                listView.addView(
-                        new LogEntry(getApplicationContext(), "Yay", "Refreshed")
-                );
+                try {
+                    LogEntries log = new LogEntries(evt.getData());
+                    while (listView.getChildCount() > 1) {
+                        listView.removeViewAt(1);
+                    }
+                    errView.setVisibility(View.GONE);
+                    addLogViews(log.getEntries());
+                } catch (JSONException e) {
+                    errView.setVisibility(View.VISIBLE);
+                    errView.setText("internal JSON error: " + e.toString());
+                }
             }
         });
+    }
+
+    private void addLogViews(LogEntries.Entry[] entries) {
+        for (LogEntries.Entry e : entries) {
+            listView.addView(new LogEntry(this, e.service, e.message));
+        }
     }
 }
