@@ -68,9 +68,9 @@ func (c *Client) Add(service, message string) (int, error) {
 		"service": service,
 		"message": message,
 	}
-	var resID int
+	var resID float64
 	err := c.apiCall("add", msg, &resID)
-	return resID, err
+	return int(resID), err
 }
 
 func (c *Client) apiCall(name string, msg, reply interface{}) error {
