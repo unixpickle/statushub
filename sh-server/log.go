@@ -22,6 +22,9 @@ type Log struct {
 	curID      int
 	perService map[string][]LogRecord
 	allRecords []LogRecord
+
+	serviceChans map[string]chan struct{}
+	globalChan   chan struct{}
 }
 
 // NewLog creates a log which depends on a configuration
@@ -55,6 +58,7 @@ func (l *Log) Add(service, msg string) (int, error) {
 	l.curID++
 	l.allRecords = trimLog(append(l.allRecords, record), ls)
 	l.perService[service] = trimLog(append(l.perService[service], record), ls)
+	l.wakeListeners(service)
 	l.logLock.Unlock()
 	return record.ID, nil
 }
@@ -76,6 +80,7 @@ func (l *Log) DeleteService(name string) error {
 		}
 	}
 	l.allRecords = l.allRecords[:newLen]
+	l.wakeListeners(name)
 	return nil
 }
 
@@ -124,6 +129,48 @@ func (l *Log) LogSizeUpdated() {
 		l.perService[k] = trimLog(v, ls)
 	}
 	l.logLock.Unlock()
+}
+
+// Wait creates a channel which is closed when any log
+// entry is added or deleted.
+// If the cancel chan is closed, the returned channel
+// is closed early.
+func (l *Log) Wait() <-chan struct{} {
+	l.logLock.Lock()
+	defer l.logLock.Unlock()
+	if l.globalChan == nil {
+		l.globalChan = make(chan struct{})
+	}
+	return l.globalChan
+}
+
+// WaitService creates a channel which is closed when a
+// log entry is added to the service, or when the service
+// is deleted.
+func (l *Log) WaitService(name string) <-chan struct{} {
+	l.logLock.Lock()
+	defer l.logLock.Unlock()
+	ch, ok := l.serviceChans[name]
+	if !ok {
+		ch = make(chan struct{})
+		l.serviceChans[name] = ch
+	}
+	return ch
+}
+
+// wakeListeners wakes all the listeners for the service,
+// as well as all global listeners.
+//
+// You should only call this while holding the log lock.
+func (l *Log) wakeListeners(service string) {
+	if ch, ok := l.serviceChans[service]; ok {
+		close(ch)
+		delete(l.serviceChans, service)
+	}
+	if l.globalChan != nil {
+		close(l.globalChan)
+		l.globalChan = nil
+	}
 }
 
 func trimLog(log []LogRecord, maxSize int) []LogRecord {
