@@ -125,36 +125,19 @@ func (s *Server) DeleteAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// StreamServiceAPI serves a stream of messages.
-func (s *Server) StreamAPI(w http.ResponseWriter, r *http.Request) {
-	var data struct {
-		Service string `json:"service"`
-	}
-	if !s.processAPICall(w, r, &data) {
+// StreamServiceAPI serves a stream of messages for a
+// particular service.
+func (s *Server) StreamServiceAPI(w http.ResponseWriter, r *http.Request) {
+	if !s.authenticated(r) {
+		s.serveError(w, "not authenticated")
 		return
 	}
-	u := websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-	}
-	conn, err := u.Upgrade(w, r, nil)
-	if err != nil {
-		return
-	}
-	for {
-		ch := s.Log.WaitService(data.Service)
-		select {
-		case <-ch:
-		case <-r.Context().Done():
-			return
-		}
-		entries, err := s.Log.ServiceLog(data.Service)
-		if err != nil {
-			conn.WriteJSON(map[string]string{"error": err.Error()})
-			return
-		}
-		// TODO: write the latest entries.
-	}
+	service := r.FormValue("service")
+	s.serveStream(w, r, func() <-chan struct{} {
+		return s.Log.WaitService(service)
+	}, func() ([]LogRecord, error) {
+		return s.Log.ServiceLog(service)
+	})
 }
 
 func (s *Server) processAPICall(w http.ResponseWriter, r *http.Request, inData interface{}) bool {
@@ -182,6 +165,48 @@ func (s *Server) serveLog(w http.ResponseWriter, l []LogRecord) {
 		s.servePayload(w, []LogRecord{})
 	} else {
 		s.servePayload(w, l)
+	}
+}
+
+func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait func() <-chan struct{},
+	getEntries func() ([]LogRecord, error)) {
+	u := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	conn, err := u.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	greatestID := -1
+	for {
+		ch := getWait()
+		entries, err := getEntries()
+		if err != nil {
+			conn.WriteJSON(map[string]string{"error": err.Error()})
+			return
+		}
+		if len(entries) == 0 {
+			greatestID = -1
+		} else if greatestID == -1 {
+			greatestID = entries[len(entries)-1].ID
+		} else {
+			startIdx := -1
+			for startIdx+1 < len(entries) && entries[startIdx+1].ID > greatestID {
+				startIdx++
+			}
+			for i := startIdx; i >= 0; i-- {
+				if conn.WriteJSON(map[string]interface{}{"data": entries[i]}) != nil {
+					return
+				}
+			}
+			greatestID = entries[0].ID
+		}
+		select {
+		case <-ch:
+		case <-r.Context().Done():
+			return
+		}
 	}
 }
 
