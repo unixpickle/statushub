@@ -9,38 +9,20 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/howeyc/gopass"
 	"github.com/unixpickle/statushub"
 )
 
-const (
-	RootEnvVar = "STATUSHUB_ROOT"
-	PassEnvVar = "STATUSHUB_PASS"
-)
-
 func main() {
-	rootURL := os.Getenv(RootEnvVar)
-	if len(os.Args) < 2 || rootURL == "" {
+	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "Usage: sh-log <service> [cmd [args...]]")
 		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "Set the "+RootEnvVar+" environment variable")
-		fmt.Fprintln(os.Stderr, "to the URL of the StatusHub server")
-		fmt.Fprintln(os.Stderr, "(e.g. http://localhost:8080).")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "Set the "+PassEnvVar+" environment variable")
-		fmt.Fprintln(os.Stderr, "to the StatusHub password to avoid manual")
-		fmt.Fprintln(os.Stderr, "entry.")
+		statushub.PrintEnvUsage(os.Stderr)
 		os.Exit(1)
 	}
 
-	client, err := statushub.NewClient(rootURL)
+	client, err := statushub.AuthCLI()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to create client:", err)
-		os.Exit(1)
-	}
-
-	if err := authenticate(client); err != nil {
-		fmt.Fprintln(os.Stderr, "Authentication failed:", err)
 		os.Exit(1)
 	}
 
@@ -104,17 +86,4 @@ func logAndEcho(c *statushub.Client, in io.Reader, echo io.Writer) {
 		}
 		fmt.Fprintln(echo, line)
 	}
-}
-
-func authenticate(c *statushub.Client) error {
-	pass := os.Getenv(PassEnvVar)
-	if pass == "" {
-		fmt.Print("Password: ")
-		passBytes, err := gopass.GetPasswd()
-		if err != nil {
-			return err
-		}
-		pass = string(passBytes)
-	}
-	return c.Login(pass)
 }
