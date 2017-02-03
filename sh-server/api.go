@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
 // GetPrefsAPI serves the API to view preferences.
@@ -120,6 +122,38 @@ func (s *Server) DeleteAPI(w http.ResponseWriter, r *http.Request) {
 		s.serveError(w, err.Error())
 	} else {
 		s.servePayload(w, true)
+	}
+}
+
+// StreamServiceAPI serves a stream of messages.
+func (s *Server) StreamAPI(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Service string `json:"service"`
+	}
+	if !s.processAPICall(w, r, &data) {
+		return
+	}
+	u := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	conn, err := u.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	for {
+		ch := s.Log.WaitService(data.Service)
+		select {
+		case <-ch:
+		case <-r.Context().Done():
+			return
+		}
+		entries, err := s.Log.ServiceLog(data.Service)
+		if err != nil {
+			conn.WriteJSON(map[string]string{"error": err.Error()})
+			return
+		}
+		// TODO: write the latest entries.
 	}
 }
 
