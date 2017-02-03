@@ -125,9 +125,9 @@ func (s *Server) DeleteAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// StreamServiceAPI serves a stream of messages for a
+// ServiceStreamAPI serves a stream of messages for a
 // particular service.
-func (s *Server) StreamServiceAPI(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServiceStreamAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.authenticated(r) {
 		s.serveError(w, "not authenticated")
 		return
@@ -135,8 +135,23 @@ func (s *Server) StreamServiceAPI(w http.ResponseWriter, r *http.Request) {
 	service := r.FormValue("service")
 	s.serveStream(w, r, func() <-chan struct{} {
 		return s.Log.WaitService(service)
-	}, func() ([]LogRecord, error) {
-		return s.Log.ServiceLog(service)
+	}, func() []LogRecord {
+		res, _ := s.Log.ServiceLog(service)
+		return res
+	})
+}
+
+// FullStreamAPI serves a stream of messages for all
+// services.
+func (s *Server) FullStreamAPI(w http.ResponseWriter, r *http.Request) {
+	if !s.authenticated(r) {
+		s.serveError(w, "not authenticated")
+		return
+	}
+	s.serveStream(w, r, func() <-chan struct{} {
+		return s.Log.Wait()
+	}, func() []LogRecord {
+		return s.Log.FullLog()
 	})
 }
 
@@ -169,7 +184,7 @@ func (s *Server) serveLog(w http.ResponseWriter, l []LogRecord) {
 }
 
 func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait func() <-chan struct{},
-	getEntries func() ([]LogRecord, error)) {
+	getEntries func() []LogRecord) {
 	u := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -181,11 +196,7 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait fun
 	greatestID := -1
 	for {
 		ch := getWait()
-		entries, err := getEntries()
-		if err != nil {
-			conn.WriteJSON(map[string]string{"error": err.Error()})
-			return
-		}
+		entries := getEntries()
 		if len(entries) == 0 {
 			greatestID = -1
 		} else if greatestID == -1 {
@@ -196,7 +207,7 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait fun
 				startIdx++
 			}
 			for i := startIdx; i >= 0; i-- {
-				if conn.WriteJSON(map[string]interface{}{"data": entries[i]}) != nil {
+				if conn.WriteJSON(entries[i]) != nil {
 					return
 				}
 			}
