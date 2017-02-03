@@ -16,6 +16,14 @@ import (
 	"net/url"
 )
 
+// A LogRecord is one logged message.
+type LogRecord struct {
+	Service string `json:"serviceName"`
+	Message string `json:"message"`
+	Time    int64  `json:"time"`
+	ID      int    `json:"id"`
+}
+
 // A Client interfaces with a StatusHub back-end.
 type Client struct {
 	c       *http.Client
@@ -68,9 +76,35 @@ func (c *Client) Add(service, message string) (int, error) {
 		"service": service,
 		"message": message,
 	}
-	var resID float64
+	var resID int
 	err := c.apiCall("add", msg, &resID)
-	return int(resID), err
+	if err != nil {
+		err = errors.New("add log record: " + err.Error())
+	}
+	return resID, err
+}
+
+// Overview returns the most recent log message from every
+// service.
+func (c *Client) Overview() ([]LogRecord, error) {
+	msg := map[string]string{}
+	var reply []LogRecord
+	if err := c.apiCall("overview", msg, &reply); err != nil {
+		return nil, errors.New("fetch overview: " + err.Error())
+	}
+	return reply, nil
+}
+
+// ServiceLog returns the log records for a service,
+// sorted by most to least recent.
+// It returns with an error if the service does not exist.
+func (c *Client) ServiceLog(service string) ([]LogRecord, error) {
+	msg := map[string]string{"service": service}
+	var reply []LogRecord
+	if err := c.apiCall("serviceLog", msg, &reply); err != nil {
+		return nil, errors.New("fetch service log: " + err.Error())
+	}
+	return reply, nil
 }
 
 func (c *Client) apiCall(name string, msg, reply interface{}) error {
@@ -95,6 +129,7 @@ func (c *Client) apiCall(name string, msg, reply interface{}) error {
 		Data  interface{} `json:"data"`
 		Error string      `json:"error"`
 	}
+	respObj.Data = reply
 	if err := json.Unmarshal(contents, &respObj); err != nil {
 		return errors.New(err.Error() + ": " + string(contents))
 	}
