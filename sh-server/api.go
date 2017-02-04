@@ -193,6 +193,18 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait fun
 	if err != nil {
 		return
 	}
+	defer conn.Close()
+
+	connDead := make(chan struct{})
+	go func() {
+		var obj interface{}
+		for {
+			if conn.ReadJSON(&obj) != nil {
+				close(connDead)
+				return
+			}
+		}
+	}()
 
 	greatestID := 0
 	first := true
@@ -220,7 +232,7 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait fun
 		}
 		select {
 		case <-ch:
-		case <-r.Context().Done():
+		case <-connDead:
 			return
 		}
 	}
