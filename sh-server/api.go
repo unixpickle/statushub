@@ -193,14 +193,19 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait fun
 	if err != nil {
 		return
 	}
-	greatestID := -1
+
+	greatestID := 0
+	first := true
 	for {
 		ch := getWait()
 		entries := getEntries()
-		if len(entries) == 0 {
-			greatestID = -1
-		} else if greatestID == -1 {
-			greatestID = entries[len(entries)-1].ID
+		if first {
+			first = false
+			if len(entries) == 0 {
+				greatestID = -1
+			} else {
+				greatestID = entries[0].ID
+			}
 		} else {
 			startIdx := -1
 			for startIdx+1 < len(entries) && entries[startIdx+1].ID > greatestID {

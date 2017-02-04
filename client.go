@@ -118,7 +118,7 @@ func (c *Client) ServiceLog(service string) ([]LogRecord, error) {
 // The returned channels will be closed on error or after
 // a graceful shutdown.
 func (c *Client) FullStream(cancel <-chan struct{}) (<-chan LogRecord, <-chan error) {
-	return c.streamCall(cancel, "/api/fullStream")
+	return c.streamCall(cancel, "/api/fullStream", "")
 }
 
 // ServiceStream is like FullStream, but it limits
@@ -126,7 +126,7 @@ func (c *Client) FullStream(cancel <-chan struct{}) (<-chan LogRecord, <-chan er
 func (c *Client) ServiceStream(service string, cancel <-chan struct{}) (<-chan LogRecord,
 	<-chan error) {
 	escaped := url.QueryEscape(service)
-	return c.streamCall(cancel, "/api/serviceStream?service="+escaped)
+	return c.streamCall(cancel, "/api/serviceStream", "service="+escaped)
 }
 
 func (c *Client) apiCall(name string, msg, reply interface{}) error {
@@ -167,7 +167,8 @@ func (c *Client) apiCall(name string, msg, reply interface{}) error {
 	return nil
 }
 
-func (c *Client) streamCall(done <-chan struct{}, path string) (<-chan LogRecord, <-chan error) {
+func (c *Client) streamCall(done <-chan struct{}, path, query string) (<-chan LogRecord,
+	<-chan error) {
 	resChan := make(chan LogRecord, 1)
 	errChan := make(chan error, 1)
 	go func() {
@@ -176,6 +177,7 @@ func (c *Client) streamCall(done <-chan struct{}, path string) (<-chan LogRecord
 
 		u := c.websocketURL()
 		u.Path = path
+		u.RawQuery = query
 
 		conn, err := net.Dial("tcp", u.Host)
 		if err != nil {

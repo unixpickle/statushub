@@ -31,8 +31,9 @@ type Log struct {
 // to get the maximum log size.
 func NewLog(cfg *Config) *Log {
 	return &Log{
-		config:     cfg,
-		perService: map[string][]LogRecord{},
+		config:       cfg,
+		perService:   map[string][]LogRecord{},
+		serviceChans: map[string]chan struct{}{},
 	}
 }
 
