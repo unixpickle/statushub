@@ -11,9 +11,14 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"regexp"
+
+	"github.com/gorilla/websocket"
+	"github.com/unixpickle/essentials"
 )
 
 // A LogRecord is one logged message.
@@ -107,6 +112,23 @@ func (c *Client) ServiceLog(service string) ([]LogRecord, error) {
 	return reply, nil
 }
 
+// FullStream creates a channel of live log messages.
+// The cancel chan can be closed to tell the stream to
+// terminate.
+// The returned channels will be closed on error or after
+// a graceful shutdown.
+func (c *Client) FullStream(cancel <-chan struct{}) (<-chan LogRecord, <-chan error) {
+	return c.streamCall(cancel, "/api/fullStream")
+}
+
+// ServiceStream is like FullStream, but it limits
+// messages to a specific service.
+func (c *Client) ServiceStream(service string, cancel <-chan struct{}) (<-chan LogRecord,
+	<-chan error) {
+	escaped := url.QueryEscape(service)
+	return c.streamCall(cancel, "/api/serviceStream?service="+escaped)
+}
+
 func (c *Client) apiCall(name string, msg, reply interface{}) error {
 	u := c.rootURL
 	u.Path = "/api/" + name
@@ -143,4 +165,85 @@ func (c *Client) apiCall(name string, msg, reply interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (c *Client) streamCall(done <-chan struct{}, path string) (<-chan LogRecord, <-chan error) {
+	resChan := make(chan LogRecord, 1)
+	errChan := make(chan error, 1)
+	go func() {
+		defer close(resChan)
+		defer close(errChan)
+
+		u := c.websocketURL()
+		u.Path = path
+
+		conn, err := net.Dial("tcp", u.Host)
+		if err != nil {
+			errChan <- essentials.AddCtx("stream log", err)
+			return
+		}
+
+		// Create dummy request for the AddCookie magic.
+		req, err := http.NewRequest("GET", c.rootURL.String(), nil)
+		if err != nil {
+			errChan <- essentials.AddCtx("stream log", err)
+			return
+		}
+		for _, c := range c.c.Jar.Cookies(&c.rootURL) {
+			req.AddCookie(c)
+		}
+
+		cli, _, err := websocket.NewClient(conn, u, req.Header, 100, 100)
+		if err != nil {
+			errChan <- essentials.AddCtx("stream log", err)
+			return
+		}
+
+		cleanupChan := make(chan struct{})
+		defer close(cleanupChan)
+		go func() {
+			select {
+			case <-done:
+			case <-cleanupChan:
+			}
+			cli.Close()
+		}()
+
+		for {
+			var msg LogRecord
+			err := cli.ReadJSON(&msg)
+			select {
+			case <-done:
+				return
+			default:
+			}
+			if err != nil {
+				errChan <- essentials.AddCtx("stream log", err)
+				return
+			}
+			select {
+			case resChan <- msg:
+			case <-done:
+				return
+			}
+		}
+	}()
+	return resChan, errChan
+}
+
+func (c *Client) websocketURL() *url.URL {
+	u := c.rootURL
+	if m, _ := regexp.MatchString(":[0-9]*$", u.Host); !m {
+		if u.Scheme == "http" {
+			u.Host += ":80"
+		} else if u.Scheme == "https" {
+			u.Host += ":443"
+		}
+	}
+	if u.Scheme == "http" {
+		u.Scheme = "ws"
+	} else if u.Scheme == "https" {
+		u.Scheme = "wss"
+	}
+	return &u
 }
