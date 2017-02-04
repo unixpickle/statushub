@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/unixpickle/statushub"
 )
 
 // GetPrefsAPI serves the API to view preferences.
@@ -135,7 +136,7 @@ func (s *Server) ServiceStreamAPI(w http.ResponseWriter, r *http.Request) {
 	service := r.FormValue("service")
 	s.serveStream(w, r, func() <-chan struct{} {
 		return s.Log.WaitService(service)
-	}, func() []LogRecord {
+	}, func() []statushub.LogRecord {
 		res, _ := s.Log.ServiceLog(service)
 		return res
 	})
@@ -150,7 +151,7 @@ func (s *Server) FullStreamAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	s.serveStream(w, r, func() <-chan struct{} {
 		return s.Log.Wait()
-	}, func() []LogRecord {
+	}, func() []statushub.LogRecord {
 		return s.Log.FullLog()
 	})
 }
@@ -175,16 +176,16 @@ func (s *Server) processAPICall(w http.ResponseWriter, r *http.Request, inData i
 	return true
 }
 
-func (s *Server) serveLog(w http.ResponseWriter, l []LogRecord) {
+func (s *Server) serveLog(w http.ResponseWriter, l []statushub.LogRecord) {
 	if l == nil {
-		s.servePayload(w, []LogRecord{})
+		s.servePayload(w, []statushub.LogRecord{})
 	} else {
 		s.servePayload(w, l)
 	}
 }
 
 func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait func() <-chan struct{},
-	getEntries func() []LogRecord) {
+	getEntries func() []statushub.LogRecord) {
 	u := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,

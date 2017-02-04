@@ -5,23 +5,17 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/unixpickle/statushub"
 )
 
-// A LogRecord is one logged message.
-type LogRecord struct {
-	Service string `json:"serviceName"`
-	Message string `json:"message"`
-	Time    int64  `json:"time"`
-	ID      int    `json:"id"`
-}
-
-// Log maintains a history of LogRecords.
+// Log maintains a history of statushub.LogRecords.
 type Log struct {
 	config     *Config
 	logLock    sync.RWMutex
 	curID      int
-	perService map[string][]LogRecord
-	allRecords []LogRecord
+	perService map[string][]statushub.LogRecord
+	allRecords []statushub.LogRecord
 
 	serviceChans map[string]chan struct{}
 	globalChan   chan struct{}
@@ -32,7 +26,7 @@ type Log struct {
 func NewLog(cfg *Config) *Log {
 	return &Log{
 		config:       cfg,
-		perService:   map[string][]LogRecord{},
+		perService:   map[string][]statushub.LogRecord{},
 		serviceChans: map[string]chan struct{}{},
 	}
 }
@@ -50,7 +44,7 @@ func (l *Log) Add(service, msg string) (int, error) {
 	// while holding the log lock.
 
 	l.logLock.Lock()
-	record := LogRecord{
+	record := statushub.LogRecord{
 		Service: service,
 		Message: msg,
 		Time:    time.Now().Unix(),
@@ -87,9 +81,9 @@ func (l *Log) DeleteService(name string) error {
 
 // Overview returns the most recent log record per
 // service, sorted from most to least recent.
-func (l *Log) Overview() []LogRecord {
+func (l *Log) Overview() []statushub.LogRecord {
 	l.logLock.RLock()
-	var entries []LogRecord
+	var entries []statushub.LogRecord
 	for _, v := range l.perService {
 		entries = append(entries, v[len(v)-1])
 	}
@@ -100,9 +94,9 @@ func (l *Log) Overview() []LogRecord {
 
 // FullLog returns all of the log records, sorted from
 // most to least recent.
-func (l *Log) FullLog() []LogRecord {
+func (l *Log) FullLog() []statushub.LogRecord {
 	l.logLock.RLock()
-	res := append([]LogRecord{}, l.allRecords...)
+	res := append([]statushub.LogRecord{}, l.allRecords...)
 	l.logLock.RUnlock()
 	return reverseLog(res)
 }
@@ -110,7 +104,7 @@ func (l *Log) FullLog() []LogRecord {
 // ServiceLog returns the log records for a particular
 // service, sorted from most to least recent.
 // It fails if there are no log records for the service.
-func (l *Log) ServiceLog(name string) ([]LogRecord, error) {
+func (l *Log) ServiceLog(name string) ([]statushub.LogRecord, error) {
 	l.logLock.RLock()
 	defer l.logLock.RUnlock()
 	entries, ok := l.perService[name]
@@ -174,7 +168,7 @@ func (l *Log) wakeListeners(service string) {
 	}
 }
 
-func trimLog(log []LogRecord, maxSize int) []LogRecord {
+func trimLog(log []statushub.LogRecord, maxSize int) []statushub.LogRecord {
 	if maxSize == 0 {
 		return log
 	}
@@ -186,15 +180,15 @@ func trimLog(log []LogRecord, maxSize int) []LogRecord {
 	return log[:maxSize]
 }
 
-func reverseLog(log []LogRecord) []LogRecord {
-	res := make([]LogRecord, len(log))
+func reverseLog(log []statushub.LogRecord) []statushub.LogRecord {
+	res := make([]statushub.LogRecord, len(log))
 	for i, x := range log {
 		res[len(res)-(i+1)] = x
 	}
 	return res
 }
 
-type logIDSorter []LogRecord
+type logIDSorter []statushub.LogRecord
 
 func (l logIDSorter) Len() int {
 	return len(l)
