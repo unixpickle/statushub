@@ -194,6 +194,7 @@ func (c *Client) streamCall(done <-chan struct{}, path, query string) (<-chan Lo
 		for _, c := range c.c.Jar.Cookies(&c.rootURL) {
 			req.AddCookie(c)
 		}
+		req.Header.Set("Host", hostname(u.Host))
 
 		cli, _, err := websocket.NewClient(conn, u, req.Header, 100, 100)
 		if err != nil {
@@ -248,4 +249,9 @@ func (c *Client) websocketURL() *url.URL {
 		u.Scheme = "wss"
 	}
 	return &u
+}
+
+func hostname(h string) string {
+	expr := regexp.MustCompile(":[0-9]*$")
+	return expr.ReplaceAllString(h, "")
 }
