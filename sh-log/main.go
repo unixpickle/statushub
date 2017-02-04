@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/statushub"
 )
 
@@ -56,7 +57,9 @@ func logCommand(c *statushub.Client, name string, args ...string) {
 		}(pipe, outs[i])
 	}
 
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		essentials.Die("Failed to start command:", err)
+	}
 
 	// Forward our signals so the child can do graceful
 	// shutdown if it wants to.
