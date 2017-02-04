@@ -2,14 +2,13 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
+	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/ratelimit"
 )
 
@@ -34,8 +33,7 @@ func main() {
 
 	cfg, err := LoadConfig(configPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "load config:", err)
-		os.Exit(1)
+		essentials.Die("load config:", err)
 	}
 	server := &Server{
 		Config: cfg,
@@ -63,8 +61,7 @@ func main() {
 		http.FileServer(assetFS())))
 
 	if err := http.ListenAndServe(":"+strconv.Itoa(port), nil); err != nil {
-		fmt.Fprintln(os.Stderr, "listen:", err)
-		os.Exit(1)
+		essentials.Die("listen:", err)
 	}
 }
 

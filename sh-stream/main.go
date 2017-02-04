@@ -42,7 +42,6 @@ func main() {
 		fmt.Println(message.Message)
 	}
 	if err := <-errChan; err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		essentials.Die(err)
 	}
 }

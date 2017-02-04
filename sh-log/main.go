@@ -23,8 +23,7 @@ func main() {
 
 	client, err := statushub.AuthCLI()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to create client:", err)
-		os.Exit(1)
+		essentials.Die("Failed to create client:", err)
 	}
 
 	if len(os.Args) == 2 {
@@ -38,13 +37,11 @@ func logCommand(c *statushub.Client, name string, args ...string) {
 	cmd := exec.Command(name, args...)
 	pipe1, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to create stdout pipe:", err)
-		os.Exit(1)
+		essentials.Die("Failed to create stdout pipe:", err)
 	}
 	pipe2, err := cmd.StderrPipe()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to create stderr pipe:", err)
-		os.Exit(1)
+		essentials.Die("Failed to create stderr pipe:", err)
 	}
 
 	var wg sync.WaitGroup
