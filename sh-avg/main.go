@@ -34,7 +34,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2 && len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "Usage: sh-avg <service> [avg size]")
+		fmt.Fprintln(os.Stderr, "Usage: sh-avg <service|*> [avg size]")
 		fmt.Fprintln(os.Stderr, "")
 		statushub.PrintEnvUsage(os.Stderr)
 		os.Exit(1)
@@ -54,18 +54,36 @@ func main() {
 		essentials.Die(err)
 	}
 
-	log, err := client.ServiceLog(os.Args[1])
-	if err != nil {
-		essentials.Die(err)
+	var serviceNames []string
+	if os.Args[1] != "*" {
+		serviceNames = []string{os.Args[1]}
+	} else {
+		overview, err := client.Overview()
+		if err != nil {
+			essentials.Die(err)
+		}
+		for _, x := range overview {
+			serviceNames = append(serviceNames, x.Service)
+		}
 	}
 
-	fields := getFields(log)
-	if avgSize == 0 {
-		for _, size := range []int{10, 20, 50} {
-			printAverages(size, fields)
+	for _, name := range serviceNames {
+		if len(serviceNames) > 1 {
+			fmt.Println("Service:", name)
 		}
-	} else {
-		printAverages(avgSize, fields)
+		log, err := client.ServiceLog(name)
+		if err != nil {
+			essentials.Die(err)
+		}
+
+		fields := getFields(log)
+		if avgSize == 0 {
+			for _, size := range []int{10, 20, 50} {
+				printAverages(size, fields)
+			}
+		} else {
+			printAverages(avgSize, fields)
+		}
 	}
 }
 
