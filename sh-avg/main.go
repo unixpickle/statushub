@@ -88,7 +88,7 @@ func main() {
 }
 
 func getFields(log []statushub.LogRecord) map[string][]float64 {
-	exp := regexp.MustCompile(`^([a-zA-Z]*)=([0-9\.-]*)$`)
+	exp := regexp.MustCompile(`^([a-zA-Z_0-9\-]*)=([0-9\.\-]*)$`)
 	res := map[string][]float64{}
 	for _, record := range log {
 		for _, field := range strings.Fields(record.Message) {
