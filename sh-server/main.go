@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/unixpickle/essentials"
@@ -40,19 +41,24 @@ func main() {
 		LimitNamer: &ratelimit.HTTPRemoteNamer{NumProxies: reverseProxies},
 	}
 
-	http.HandleFunc("/", server.Root)
-	http.HandleFunc("/login", server.Login)
-	http.HandleFunc("/logout", server.Logout)
-	http.HandleFunc("/api/getprefs", server.GetPrefsAPI)
-	http.HandleFunc("/api/setprefs", server.SetPrefsAPI)
-	http.HandleFunc("/api/chpass", server.ChpassAPI)
-	http.HandleFunc("/api/add", server.AddAPI)
-	http.HandleFunc("/api/overview", server.OverviewAPI)
-	http.HandleFunc("/api/serviceLog", server.ServiceLogAPI)
-	http.HandleFunc("/api/fullLog", server.FullLogAPI)
-	http.HandleFunc("/api/serviceStream", server.ServiceStreamAPI)
-	http.HandleFunc("/api/fullStream", server.FullStreamAPI)
-	http.HandleFunc("/api/delete", server.DeleteAPI)
+	handlers := map[string]http.HandlerFunc{
+		"/":                  server.Root,
+		"/login":             server.Login,
+		"/logout":            server.Logout,
+		"/api/getprefs":      server.GetPrefsAPI,
+		"/api/setprefs":      server.SetPrefsAPI,
+		"/api/chpass":        server.ChpassAPI,
+		"/api/add":           server.AddAPI,
+		"/api/overview":      server.OverviewAPI,
+		"/api/serviceLog":    server.ServiceLogAPI,
+		"/api/fullLog":       server.FullLogAPI,
+		"/api/serviceStream": server.ServiceStreamAPI,
+		"/api/fullStream":    server.FullStreamAPI,
+		"/api/delete":        server.DeleteAPI,
+	}
+	for path, f := range handlers {
+		http.Handle(path, context.ClearHandler(f))
+	}
 	http.Handle("/assets/", http.StripPrefix("/assets/",
 		http.FileServer(assetFS())))
 
