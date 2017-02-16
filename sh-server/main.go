@@ -12,10 +12,6 @@ import (
 	"github.com/unixpickle/ratelimit"
 )
 
-type Limiter interface {
-	Limit(ipID string) bool
-}
-
 const (
 	RateLimitDuration = time.Minute * 30
 	RateLimitAttempts = 200
@@ -69,7 +65,7 @@ type Server struct {
 	Config     *Config
 	Log        *Log
 	Sessions   *sessions.CookieStore
-	LoginLimit Limiter
+	LoginLimit *ratelimit.TimeSliceLimiter
 	LimitNamer *ratelimit.HTTPRemoteNamer
 }
 
@@ -98,12 +94,14 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 		return
 	}
-	if s.LoginLimit.Limit(s.LimitNamer.Name(r)) {
+	limitID := s.LimitNamer.Name(r)
+	if s.LoginLimit.Get(limitID) < 0 {
 		http.Error(w, "too many login attempts", http.StatusTooManyRequests)
 		return
 	}
 	pass := r.FormValue("password")
 	if !s.Config.CheckPass(pass) {
+		s.LoginLimit.Decrement(limitID)
 		http.Redirect(w, r, "/login?status=failure", http.StatusSeeOther)
 		return
 	}
