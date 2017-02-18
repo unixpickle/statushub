@@ -35,6 +35,7 @@ func main() {
 
 func logCommand(c *statushub.Client, name string, args ...string) {
 	cmd := exec.Command(name, args...)
+	cmd.Stdin = os.Stdin
 	pipe1, err := cmd.StdoutPipe()
 	if err != nil {
 		essentials.Die("Failed to create stdout pipe:", err)
