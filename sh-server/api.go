@@ -46,7 +46,7 @@ func (s *Server) ChpassAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.processAPICall(w, r, &obj) {
 		return
 	}
-	if obj.Old != obj.Confirm {
+	if obj.New != obj.Confirm {
 		s.serveError(w, "passwords do not match")
 		return
 	}
