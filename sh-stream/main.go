@@ -11,7 +11,9 @@ import (
 
 func main() {
 	var n int
+	var reconnect bool
 	flag.IntVar(&n, "n", 0, "max number of messages")
+	flag.BoolVar(&reconnect, "reconnect", false, "automatically attempt reconnect")
 	flag.Parse()
 
 	if len(flag.Args()) != 0 && len(flag.Args()) != 1 {
@@ -20,11 +22,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	client, err := statushub.AuthCLI()
-	if err != nil {
-		essentials.Die(err)
+	for {
+		// Re-create client each time to avoid having
+		// the session expire.
+		client, err := statushub.AuthCLI()
+		if err != nil {
+			essentials.Die(err)
+		}
+		if err := stream(client, n); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			if !reconnect {
+				os.Exit(1)
+			}
+		}
 	}
+}
 
+func stream(client *statushub.Client, n int) error {
 	var stream <-chan statushub.LogRecord
 	var errChan <-chan error
 
@@ -41,7 +55,6 @@ func main() {
 		}
 		fmt.Println(message.Message)
 	}
-	if err := <-errChan; err != nil {
-		essentials.Die(err)
-	}
+
+	return <-errChan
 }
