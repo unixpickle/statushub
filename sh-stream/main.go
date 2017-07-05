@@ -12,13 +12,16 @@ import (
 func main() {
 	var n int
 	var reconnect bool
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: sh-stream [flags] [service]")
+		flag.PrintDefaults()
+	}
 	flag.IntVar(&n, "n", 0, "max number of messages")
 	flag.BoolVar(&reconnect, "reconnect", false, "automatically attempt reconnect")
 	flag.Parse()
 
 	if len(flag.Args()) != 0 && len(flag.Args()) != 1 {
-		fmt.Fprintln(os.Stderr, "Usage: sh-stream [flags ...] [service]")
-		flag.PrintDefaults()
+		flag.Usage()
 		os.Exit(1)
 	}
 
