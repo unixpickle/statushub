@@ -59,13 +59,17 @@ func logCommand(c *statushub.Client, name string, args ...string) {
 		essentials.Die("Failed to start command:", err)
 	}
 
-	// Forward our signals so the child can do graceful
+	// Ignore our first Ctrl+C so the child can do graceful
 	// shutdown if it wants to.
+	//
+	// If the child logs a ton of stuff on exit, then the
+	// user can press Ctrl+C again to terminate sh-log before
+	// all the output has been sent to the server.
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
-		for _ = range c {
-		}
+		<-c
+		signal.Stop(c)
 	}()
 
 	wg.Wait()
