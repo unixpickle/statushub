@@ -219,6 +219,9 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait fun
 			} else {
 				greatestID = entries[0].ID
 			}
+		} else if len(entries) == 0 {
+			// The log was cleared.
+			greatestID = -1
 		} else {
 			startIdx := -1
 			for startIdx+1 < len(entries) && entries[startIdx+1].ID > greatestID {
