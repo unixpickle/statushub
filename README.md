@@ -65,6 +65,4 @@ When you have edited an asset for `sh-server` such as a stylesheet or a script f
 
  * Finish Go client
  * Persist the log to a file
- * Android Wear application
- * Use a grid layout for the "Overview" page
- * Display log message dates
+ * More informative URLs in Web UI (e.g. '/service/NameHere')
