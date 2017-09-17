@@ -2,38 +2,64 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"os/signal"
 	"sync"
+	"time"
 
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/statushub"
 )
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "Usage: sh-log <service> [cmd [args...]]")
+const LogTimeFormat = "2006/01/02 15:04:05"
+
+type Flags struct {
+	ServiceName   string
+	AddTimestamps bool
+}
+
+func ParseFlags() (f *Flags, args []string) {
+	f = &Flags{}
+
+	flag.BoolVar(&f.AddTimestamps, "timestamps", false, "prepend timestamps to lines")
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: sh-log [flags] <service> [cmd [args...]]")
+		fmt.Fprintln(os.Stderr, "")
+		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
 		statushub.PrintEnvUsage(os.Stderr)
+	}
+
+	flag.Parse()
+	if len(flag.Args()) == 0 {
+		flag.Usage()
 		os.Exit(1)
 	}
+	f.ServiceName = flag.Args()[0]
+
+	return f, flag.Args()[1:]
+}
+
+func main() {
+	flags, args := ParseFlags()
 
 	client, err := statushub.AuthCLI()
 	if err != nil {
 		essentials.Die("Failed to create client:", err)
 	}
 
-	if len(os.Args) == 2 {
-		logAndEcho(client, os.Stdin, os.Stdout)
+	if len(args) == 0 {
+		logAndEcho(client, flags, os.Stdin, os.Stdout)
 	} else {
-		logCommand(client, os.Args[2], os.Args[3:]...)
+		logCommand(client, flags, args[0], args[1:]...)
 	}
 }
 
-func logCommand(c *statushub.Client, name string, args ...string) {
+func logCommand(c *statushub.Client, f *Flags, name string, args ...string) {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
 	pipe1, err := cmd.StdoutPipe()
@@ -51,7 +77,7 @@ func logCommand(c *statushub.Client, name string, args ...string) {
 		wg.Add(1)
 		go func(pipe io.Reader, out io.Writer) {
 			defer wg.Done()
-			logAndEcho(c, pipe, out)
+			logAndEcho(c, f, pipe, out)
 		}(pipe, outs[i])
 	}
 
@@ -76,7 +102,7 @@ func logCommand(c *statushub.Client, name string, args ...string) {
 	cmd.Wait()
 }
 
-func logAndEcho(c *statushub.Client, in io.Reader, echo io.Writer) {
+func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 	r := bufio.NewReader(in)
 	for {
 		line, err := r.ReadString('\n')
@@ -86,9 +112,17 @@ func logAndEcho(c *statushub.Client, in io.Reader, echo io.Writer) {
 		if line[len(line)-1] == '\n' {
 			line = line[:len(line)-1]
 		}
-		if _, err := c.Add(os.Args[1], line); err != nil {
+		if f.AddTimestamps {
+			line = addTimestamp(line)
+		}
+		if _, err := c.Add(f.ServiceName, line); err != nil {
 			fmt.Fprintln(os.Stderr, "Failed to log:", err)
 		}
 		fmt.Fprintln(echo, line)
 	}
+}
+
+func addTimestamp(line string) string {
+	t := time.Now()
+	return t.Format(LogTimeFormat) + " " + line
 }
