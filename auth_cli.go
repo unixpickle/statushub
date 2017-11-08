@@ -28,7 +28,7 @@ func AuthCLI() (*Client, error) {
 	}
 	pass := os.Getenv(PassEnvVar)
 	if pass == "" {
-		fmt.Print("Password: ")
+		fmt.Print("StatusHub password: ")
 		passBytes, err := gopass.GetPasswd()
 		if err != nil {
 			return nil, err
