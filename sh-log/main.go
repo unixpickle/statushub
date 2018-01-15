@@ -20,12 +20,14 @@ const LogTimeFormat = "2006/01/02 15:04:05"
 type Flags struct {
 	ServiceName   string
 	AddTimestamps bool
+	Timezone      string
 }
 
 func ParseFlags() (f *Flags, args []string) {
 	f = &Flags{}
 
 	flag.BoolVar(&f.AddTimestamps, "timestamps", false, "prepend timestamps to lines")
+	flag.StringVar(&f.Timezone, "timezone", "", "show timestamps in an IANA timezone")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: sh-log [flags] <service> [cmd [args...]]")
 		fmt.Fprintln(os.Stderr, "")
@@ -113,7 +115,7 @@ func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 			line = line[:len(line)-1]
 		}
 		if f.AddTimestamps {
-			line = addTimestamp(line)
+			line = addTimestamp(f.Timezone, line)
 		}
 		if _, err := c.Add(f.ServiceName, line); err != nil {
 			fmt.Fprintln(os.Stderr, "Failed to log:", err)
@@ -122,7 +124,14 @@ func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 	}
 }
 
-func addTimestamp(line string) string {
+func addTimestamp(timezone, line string) string {
 	t := time.Now()
+	if timezone != "" {
+		location, err := time.LoadLocation(timezone)
+		if err != nil {
+			essentials.Die("Invalid timezone:", err)
+		}
+		t = t.In(location)
+	}
 	return t.Format(LogTimeFormat) + " " + line
 }
