@@ -16,6 +16,7 @@ type Log struct {
 	curID      int
 	perService map[string][]statushub.LogRecord
 	allRecords []statushub.LogRecord
+	media      map[string][]statushub.MediaRecord
 
 	serviceChans map[string]chan struct{}
 	globalChan   chan struct{}
@@ -54,6 +55,27 @@ func (l *Log) Add(service, msg string) (int, error) {
 	l.allRecords = trimLog(append(l.allRecords, record), ls)
 	l.perService[service] = trimLog(append(l.perService[service], record), ls)
 	l.wakeListeners(service)
+	l.logLock.Unlock()
+	return record.ID, nil
+}
+
+// AddMedia adds a media record.
+func (l *Log) AddMedia(name, filename, mime string, data []byte) (int, error) {
+	cacheSize := l.config.MediaCache()
+
+	// See comment in Add().
+
+	l.logLock.Lock()
+	record := statushub.MediaRecord{
+		Name:     name,
+		Filename: filename,
+		Mime:     mime,
+		Data:     data,
+		Time:     time.Now().Unix(),
+		ID:       l.curID,
+	}
+	l.curID++
+	l.media[name] = trimMedia(append(l.media[name], record), cacheSize)
 	l.logLock.Unlock()
 	return record.ID, nil
 }
@@ -126,6 +148,17 @@ func (l *Log) LogSizeUpdated() {
 	l.logLock.Unlock()
 }
 
+// MediaCacheUpdated directs the log to delete media
+// records as needed to accommodate the new cache size.
+func (l *Log) MediaCacheUpdated() {
+	cacheSize := l.config.MediaCache()
+	l.logLock.Lock()
+	for k, v := range l.media {
+		l.media[k] = trimMedia(v, cacheSize)
+	}
+	l.logLock.Unlock()
+}
+
 // Wait creates a channel which is closed when any log
 // entry is added or deleted.
 // If the cancel chan is closed, the returned channel
@@ -178,6 +211,26 @@ func trimLog(log []statushub.LogRecord, maxSize int) []statushub.LogRecord {
 	overflow := len(log) - maxSize
 	copy(log[:], log[overflow:])
 	return log[:maxSize]
+}
+
+func trimMedia(log []statushub.MediaRecord, cacheSize int) []statushub.MediaRecord {
+	if cacheSize == 0 {
+		return log
+	}
+	for {
+		totalSize := 0
+		for _, item := range log[:len(log)-1] {
+			totalSize += len(item.Data)
+		}
+		if totalSize > cacheSize {
+			copy(log, log[1:])
+			log[len(log)-1].Data = nil
+			log = log[:len(log)-1]
+		} else {
+			break
+		}
+	}
+	return log
 }
 
 func reverseLog(log []statushub.LogRecord) []statushub.LogRecord {

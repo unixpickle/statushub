@@ -14,8 +14,10 @@ func (s *Server) GetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.processAPICall(w, r, nil) {
 		return
 	}
+	// TODO: use snake_case here.
 	obj := map[string]interface{}{
-		"logSize": s.Config.LogSize(),
+		"logSize":    s.Config.LogSize(),
+		"mediaCache": s.Config.MediaCache(),
 	}
 	s.servePayload(w, obj)
 }
@@ -23,17 +25,26 @@ func (s *Server) GetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 // SetPrefsAPI serves the API to set preferences.
 func (s *Server) SetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 	var prefObj struct {
-		LogSize int `json:"logSize"`
+		LogSize    int `json:"logSize"`
+		MediaCache int `json:"mediaCache"`
 	}
 	if !s.processAPICall(w, r, &prefObj) {
 		return
 	}
+
 	if err := s.Config.SetLogSize(prefObj.LogSize); err != nil {
-		s.serveError(w, "could not save settings")
-	} else {
-		s.Log.LogSizeUpdated()
-		s.servePayload(w, true)
+		s.serveError(w, "could not set log size")
+		return
 	}
+	s.Log.LogSizeUpdated()
+
+	if err := s.Config.SetMediaCache(prefObj.MediaCache); err != nil {
+		s.serveError(w, "could not set media cache")
+		return
+	}
+	s.Log.MediaCacheUpdated()
+
+	s.servePayload(w, true)
 }
 
 // ChpassAPI serves the API for password changing.
@@ -71,6 +82,25 @@ func (s *Server) AddAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, err := s.Log.Add(obj.Service, obj.Message)
+	if err != nil {
+		s.serveError(w, err.Error())
+	} else {
+		s.servePayload(w, id)
+	}
+}
+
+// AddMediaAPI serves the API for adding a media entry.
+func (s *Server) AddMediaAPI(w http.ResponseWriter, r *http.Request) {
+	var obj struct {
+		Name     string `json:"name"`
+		Filename string `json:"filename"`
+		Mime     string `json:"mime"`
+		Data     []byte `json:"data"`
+	}
+	if !s.processAPICall(w, r, &obj) {
+		return
+	}
+	id, err := s.Log.AddMedia(obj.Name, obj.Filename, obj.Mime, obj.Data)
 	if err != nil {
 		s.serveError(w, err.Error())
 	} else {

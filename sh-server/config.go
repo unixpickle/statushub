@@ -18,6 +18,11 @@ import (
 // backlog.
 const DefaultLogSize = 1000
 
+// DefaultMediaCache is the default soft-limit on the
+// number of bytes to store for a single media item's
+// backlog.
+const DefaultMediaCache = 10000000
+
 // Config manages the server settings.
 // It automatically deals with concurrency issues, saving,
 // loading, and prompting the user for new values.
@@ -41,6 +46,7 @@ func LoadConfig(path string) (*Config, error) {
 			cfg: &configData{
 				PasswordHash: hashPassword(string(pass)),
 				LogSize:      DefaultLogSize,
+				MediaCache:   DefaultMediaCache,
 			},
 			path: path,
 		}
@@ -86,6 +92,21 @@ func (c *Config) SetLogSize(s int) error {
 	})
 }
 
+// MediaCache returns the current media cache size.
+func (c *Config) MediaCache() int {
+	c.lock.RLock()
+	res := c.cfg.MediaCache
+	c.lock.RUnlock()
+	return res
+}
+
+// SetMediaCache sets the media cache size.
+func (c *Config) SetMediaCache(s int) error {
+	return c.alter(func() {
+		c.cfg.MediaCache = s
+	})
+}
+
 func (c *Config) alter(f func()) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -109,6 +130,7 @@ func (c *Config) save() error {
 type configData struct {
 	PasswordHash string `json:"pass"`
 	LogSize      int    `json:"log_size"`
+	MediaCache   int    `json:"media_cache"`
 }
 
 func hashPassword(p string) string {

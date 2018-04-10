@@ -29,6 +29,16 @@ type LogRecord struct {
 	ID      int    `json:"id"`
 }
 
+// A MediaRecord is a piece of media stored on the server.
+type MediaRecord struct {
+	Name     string `json:"name"`
+	Filename string `json:"filename"`
+	Mime     string `json:"mime"`
+	Data     []byte `json:"data"`
+	Time     int64  `json:"time"`
+	ID       int    `json:"id"`
+}
+
 // A Client interfaces with a StatusHub back-end.
 type Client struct {
 	c       *http.Client
@@ -85,6 +95,22 @@ func (c *Client) Add(service, message string) (int, error) {
 	err := c.apiCall("add", msg, &resID)
 	if err != nil {
 		err = errors.New("add log record: " + err.Error())
+	}
+	return resID, err
+}
+
+// AddMedia adds a media record and returns its ID.
+func (c *Client) AddMedia(name, filename, mime string, data []byte) (int, error) {
+	msg := map[string]interface{}{
+		"name":     name,
+		"filename": filename,
+		"mime":     mime,
+		"data":     data,
+	}
+	var resID int
+	err := c.apiCall("addmedia", msg, &resID)
+	if err != nil {
+		err = errors.New("add media record: " + err.Error())
 	}
 	return resID, err
 }
