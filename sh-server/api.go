@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/unixpickle/statushub"
@@ -91,7 +95,7 @@ func (s *Server) AddAPI(w http.ResponseWriter, r *http.Request) {
 // AddMediaAPI serves the API for adding a media entry.
 func (s *Server) AddMediaAPI(w http.ResponseWriter, r *http.Request) {
 	var obj struct {
-		Name     string `json:"name"`
+		Folder   string `json:"folder"`
 		Filename string `json:"filename"`
 		Mime     string `json:"mime"`
 		Data     []byte `json:"data"`
@@ -99,7 +103,7 @@ func (s *Server) AddMediaAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.processAPICall(w, r, &obj) {
 		return
 	}
-	id, err := s.Log.AddMedia(obj.Name, obj.Filename, obj.Mime, obj.Data)
+	id, err := s.Log.AddMedia(obj.Folder, obj.Filename, obj.Mime, obj.Data)
 	if err != nil {
 		s.serveError(w, err.Error())
 	} else {
@@ -113,6 +117,15 @@ func (s *Server) OverviewAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.serveLog(w, s.Log.Overview())
+}
+
+// MediaOverviewAPI serves the API for seeing the media
+// overview.
+func (s *Server) MediaOverviewAPI(w http.ResponseWriter, r *http.Request) {
+	if !s.processAPICall(w, r, nil) {
+		return
+	}
+	s.serveMediaLog(w, s.Log.MediaOverview())
 }
 
 // FullLogAPI serves the API for seeing the entire log.
@@ -140,6 +153,47 @@ func (s *Server) ServiceLogAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// MediaLogAPI serves the API for seeing the log of a
+// media folder.
+func (s *Server) MediaLogAPI(w http.ResponseWriter, r *http.Request) {
+	var obj struct {
+		Folder string `json:"folder"`
+	}
+	if !s.processAPICall(w, r, &obj) {
+		return
+	}
+	records, err := s.Log.MediaLog(obj.Folder)
+	if err != nil {
+		s.serveError(w, err.Error())
+	} else {
+		s.serveMediaLog(w, records)
+	}
+}
+
+// MediaAPI serves the contents of a media item.
+func (s *Server) MediaViewAPI(w http.ResponseWriter, r *http.Request) {
+	disableCache(w)
+	if !s.authenticated(r) {
+		http.Error(w, "not authenticated", http.StatusForbidden)
+		return
+	}
+	id, err := strconv.Atoi(r.FormValue("id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	record := s.Log.MediaRecord(id)
+	if record == nil {
+		http.Error(w, "unknown media record", http.StatusNotFound)
+	} else {
+		disposition := "inline; filename*=UTF-8''" + url.PathEscape(record.Filename)
+		w.Header().Set("Content-Disposition", disposition)
+		w.Header().Set("Content-Type", record.Mime)
+		http.ServeContent(w, r, record.Filename, time.Unix(record.Time, 0),
+			bytes.NewReader(record.Data))
+	}
+}
+
 // DeleteAPI serves the API for deleting services.
 func (s *Server) DeleteAPI(w http.ResponseWriter, r *http.Request) {
 	var obj struct {
@@ -149,6 +203,21 @@ func (s *Server) DeleteAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.Log.DeleteService(obj.Service); err != nil {
+		s.serveError(w, err.Error())
+	} else {
+		s.servePayload(w, true)
+	}
+}
+
+// DeleteMediaAPI serves the API for deleting media.
+func (s *Server) DeleteMediaAPI(w http.ResponseWriter, r *http.Request) {
+	var obj struct {
+		Folder string `json:"folder"`
+	}
+	if !s.processAPICall(w, r, &obj) {
+		return
+	}
+	if err := s.Log.DeleteMedia(obj.Folder); err != nil {
 		s.serveError(w, err.Error())
 	} else {
 		s.servePayload(w, true)
@@ -208,6 +277,14 @@ func (s *Server) processAPICall(w http.ResponseWriter, r *http.Request, inData i
 func (s *Server) serveLog(w http.ResponseWriter, l []statushub.LogRecord) {
 	if l == nil {
 		s.servePayload(w, []statushub.LogRecord{})
+	} else {
+		s.servePayload(w, l)
+	}
+}
+
+func (s *Server) serveMediaLog(w http.ResponseWriter, l []statushub.MediaRecord) {
+	if l == nil {
+		s.servePayload(w, []statushub.MediaRecord{})
 	} else {
 		s.servePayload(w, l)
 	}

@@ -1,4 +1,4 @@
-class DeleteService extends React.Component {
+class DeleteItem extends React.Component {
   constructor() {
     super();
     this.state = {
@@ -16,7 +16,7 @@ class DeleteService extends React.Component {
 
   handleDelete() {
     this.setState({loading: true, error: null});
-    this._deleteReq = callAPI('delete', {service: this.props.service}, (e) => {
+    this._deleteReq = callAPI(this.deleteAPI(), this.queryParams(), (e) => {
       this._deleteReq = null;
       if (e) {
         this.setState({loading: false, error: e});
@@ -33,7 +33,7 @@ class DeleteService extends React.Component {
     }
     return (
       <div className="delete-pane">
-        <label>Delete {this.props.service}?</label>
+        <label>Delete {this.props.name}?</label>
         <div className="buttons">
           <button className={'delete-button' + btnClass}
                   onClick={() => this.handleDelete()}>Delete</button>
@@ -44,5 +44,33 @@ class DeleteService extends React.Component {
                             : <label className="error">{this.state.error}</label>)}
       </div>
     );
+  }
+
+  queryParams() {
+    throw Error('method is abstract');
+  }
+
+  deleteAPI() {
+    throw Error('method is abstract');
+  }
+}
+
+class DeleteService extends DeleteItem {
+  queryParams() {
+    return {service: this.props.name};
+  }
+
+  deleteAPI() {
+    return 'delete';
+  }
+}
+
+class DeleteMedia extends DeleteItem {
+  queryParams() {
+    return {folder: this.props.name};
+  }
+
+  deleteAPI() {
+    return 'deleteMedia';
   }
 }

@@ -40,10 +40,20 @@ function LogPane(props) {
 function LogItem(props) {
   const inf = props.info;
   let clickHandler = !props.onClick ? null : () => props.onClick(inf);
-  return (
-    <li className={props.onClick ? 'clickable' : ''} onClick={clickHandler}>
-      <label className="service-name">{inf.serviceName}</label>
-      <label className="message">{inf.message}</label>
-    </li>
-  );
+  if (inf.hasOwnProperty('serviceName')) {
+    return (
+      <li className={props.onClick ? 'clickable' : ''} onClick={clickHandler}>
+        <label className="service-name">{inf.serviceName}</label>
+        <label className="message">{inf.message}</label>
+      </li>
+    );
+  } else {
+    // TODO: display inline videos and images.
+    return (
+      <li className={props.onClick ? 'clickable' : ''} onClick={clickHandler}>
+        <label className="service-name">{inf.folder}</label>
+        <label className="message">{'Media item:' + inf.filename}</label>
+      </li>
+    );
+  }
 }

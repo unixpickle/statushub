@@ -6,8 +6,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/statushub"
 )
+
+type MediaRecord struct {
+	statushub.MediaRecord
+	Data []byte `json:"-"`
+}
 
 // Log maintains a history of statushub.LogRecords.
 type Log struct {
@@ -16,7 +22,7 @@ type Log struct {
 	curID      int
 	perService map[string][]statushub.LogRecord
 	allRecords []statushub.LogRecord
-	media      map[string][]statushub.MediaRecord
+	media      map[string][]MediaRecord
 
 	serviceChans map[string]chan struct{}
 	globalChan   chan struct{}
@@ -28,6 +34,7 @@ func NewLog(cfg *Config) *Log {
 	return &Log{
 		config:       cfg,
 		perService:   map[string][]statushub.LogRecord{},
+		media:        map[string][]MediaRecord{},
 		serviceChans: map[string]chan struct{}{},
 	}
 }
@@ -60,22 +67,24 @@ func (l *Log) Add(service, msg string) (int, error) {
 }
 
 // AddMedia adds a media record.
-func (l *Log) AddMedia(name, filename, mime string, data []byte) (int, error) {
+func (l *Log) AddMedia(folder, filename, mime string, data []byte) (int, error) {
 	cacheSize := l.config.MediaCache()
 
 	// See comment in Add().
 
 	l.logLock.Lock()
-	record := statushub.MediaRecord{
-		Name:     name,
-		Filename: filename,
-		Mime:     mime,
-		Data:     data,
-		Time:     time.Now().Unix(),
-		ID:       l.curID,
+	record := MediaRecord{
+		MediaRecord: statushub.MediaRecord{
+			Folder:   folder,
+			Filename: filename,
+			Mime:     mime,
+			Time:     time.Now().Unix(),
+			ID:       l.curID,
+		},
+		Data: data,
 	}
 	l.curID++
-	l.media[name] = trimMedia(append(l.media[name], record), cacheSize)
+	l.media[folder] = trimMedia(append(l.media[folder], record), cacheSize)
 	l.logLock.Unlock()
 	return record.ID, nil
 }
@@ -101,6 +110,18 @@ func (l *Log) DeleteService(name string) error {
 	return nil
 }
 
+// DeleteMedia deletes a media entry.
+// It fails if the folder does not exist.
+func (l *Log) DeleteMedia(folder string) error {
+	l.logLock.Lock()
+	defer l.logLock.Unlock()
+	if _, ok := l.media[folder]; !ok {
+		return errors.New("no such media folder: " + folder)
+	}
+	delete(l.media, folder)
+	return nil
+}
+
 // Overview returns the most recent log record per
 // service, sorted from most to least recent.
 func (l *Log) Overview() []statushub.LogRecord {
@@ -111,6 +132,21 @@ func (l *Log) Overview() []statushub.LogRecord {
 	}
 	l.logLock.RUnlock()
 	sort.Sort(logIDSorter(entries))
+	return entries
+}
+
+// MediaOverview returns the most recent media record per
+// folder, sorted from most to least recent.
+func (l *Log) MediaOverview() []statushub.MediaRecord {
+	l.logLock.RLock()
+	var entries []statushub.MediaRecord
+	for _, v := range l.media {
+		entries = append(entries, v[len(v)-1].MediaRecord)
+	}
+	l.logLock.RUnlock()
+	essentials.VoodooSort(entries, func(i, j int) bool {
+		return entries[i].ID > entries[j].ID
+	})
 	return entries
 }
 
@@ -134,6 +170,36 @@ func (l *Log) ServiceLog(name string) ([]statushub.LogRecord, error) {
 		return nil, errors.New("unknown service: " + name)
 	}
 	return reverseLog(entries), nil
+}
+
+// MediaLog returns the media records for a folder.
+// It fails if there are no media records for the folder.
+func (l *Log) MediaLog(folder string) ([]statushub.MediaRecord, error) {
+	l.logLock.RLock()
+	defer l.logLock.RUnlock()
+	entries, ok := l.media[folder]
+	if !ok {
+		return nil, errors.New("unknown media folder: " + folder)
+	}
+	res := make([]statushub.MediaRecord, len(entries))
+	for i, x := range entries {
+		res[len(entries)-(i+1)] = x.MediaRecord
+	}
+	return res, nil
+}
+
+// MediaRecord looks up the media record by ID.
+func (l *Log) MediaRecord(id int) *MediaRecord {
+	l.logLock.RLock()
+	defer l.logLock.RUnlock()
+	for _, records := range l.media {
+		for _, record := range records {
+			if record.ID == id {
+				return &record
+			}
+		}
+	}
+	return nil
 }
 
 // LogSizeUpdated directs the log to delete log records as
@@ -213,19 +279,17 @@ func trimLog(log []statushub.LogRecord, maxSize int) []statushub.LogRecord {
 	return log[:maxSize]
 }
 
-func trimMedia(log []statushub.MediaRecord, cacheSize int) []statushub.MediaRecord {
+func trimMedia(log []MediaRecord, cacheSize int) []MediaRecord {
 	if cacheSize == 0 {
 		return log
 	}
-	for {
+	for len(log) > 1 {
 		totalSize := 0
-		for _, item := range log[:len(log)-1] {
+		for _, item := range log {
 			totalSize += len(item.Data)
 		}
 		if totalSize > cacheSize {
-			copy(log, log[1:])
-			log[len(log)-1].Data = nil
-			log = log[:len(log)-1]
+			essentials.OrderedDelete(&log, 0)
 		} else {
 			break
 		}

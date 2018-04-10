@@ -4,15 +4,18 @@ class Root extends React.Component {
     this.state = {
       page: 'overview',
       overview: { error: null, entries: null },
-      fullLog: { error: null, entries: null },
+      mediaOverview: { error: null, entries: null },
       serviceLog: { error: null, entries: null },
-      serviceLogReq: ''
+      mediaLog: { error: null, entries: null },
+      serviceLogReq: '',
+      mediaLogReq: ''
     };
     if (!history.state) {
       this.replaceHistory();
     } else {
       this.state.page = history.state.page;
       this.state.serviceLogReq = history.state.serviceLogReq;
+      this.state.mediaLogReq = history.state.mediaLogReq;
     }
     this._client = null;
   }
@@ -21,7 +24,8 @@ class Root extends React.Component {
     this._client = new Client();
     this._client.onOverview = this.gotSceneData.bind(this, 'overview');
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
-    this._client.onFullLog = this.gotSceneData.bind(this, 'fullLog');
+    this._client.onMediaOverview = this.gotSceneData.bind(this, 'mediaOverview');
+    this._client.onMediaLog = this.gotSceneData.bind(this, 'mediaLog');
 
     window.onpopstate = e => {
       this.setState(e.state, () => this.fetchPageData());
@@ -40,7 +44,7 @@ class Root extends React.Component {
       null,
       React.createElement(NavBar, { page: this.state.page,
         onOverview: () => this.showTab('overview'),
-        onFullLog: () => this.showTab('fullLog'),
+        onMedia: () => this.showTab('mediaOverview'),
         onSettings: () => this.showTab('settings') }),
       this.pageContent()
     );
@@ -51,17 +55,26 @@ class Root extends React.Component {
       case 'overview':
         return React.createElement(LogScene, { info: this.state.overview,
           onClick: e => this.showServiceLog(e) });
-      case 'fullLog':
-        return React.createElement(LogScene, { info: this.state.fullLog });
+      case 'mediaOverview':
+        return React.createElement(LogScene, { info: this.state.mediaOverview,
+          onClick: e => this.showMediaLog(e) });
       case 'serviceLog':
         return React.createElement(LogScene, { info: this.state.serviceLog,
-          onDelete: () => this.handleDelete() });
+          onDelete: () => this.handleDeleteService() });
+      case 'mediaLog':
+        return React.createElement(LogScene, { info: this.state.mediaLog,
+          onClick: info => this.viewMediaItem(info),
+          onDelete: () => this.handleDeleteMedia() });
       case 'settings':
         return React.createElement(Settings, { info: this.state.settings });
-      case 'delete':
-        return React.createElement(DeleteService, { service: this.state.serviceLogReq,
-          onCancel: () => this.handleDeleteCancel(),
-          onDone: () => this.handleDeleted() });
+      case 'deleteService':
+        return React.createElement(DeleteService, { name: this.state.serviceLogReq,
+          onCancel: () => this.handleDeleteServiceCancel(),
+          onDone: () => this.handleDeletedService() });
+      case 'deleteMedia':
+        return React.createElement(DeleteMedia, { name: this.state.mediaLogReq,
+          onCancel: () => this.handleDeleteMediaCancel(),
+          onDone: () => this.handleDeletedMedia() });
     }
     throw new Error('unsupported page: ' + this.state.page);
   }
@@ -74,11 +87,14 @@ class Root extends React.Component {
       case 'overview':
         this._client.fetchOverview();
         break;
-      case 'fullLog':
-        this._client.fetchFullLog();
+      case 'mediaOverview':
+        this._client.fetchMediaOverview();
         break;
       case 'serviceLog':
         this._client.fetchServiceLog(this.state.serviceLogReq);
+        break;
+      case 'mediaLog':
+        this._client.fetchMediaLog(this.state.mediaLogReq);
         break;
     }
   }
@@ -101,6 +117,14 @@ class Root extends React.Component {
     }, () => this.pushAndFetch());
   }
 
+  showMediaLog(info) {
+    this.setState({
+      page: 'mediaLog',
+      mediaLog: { error: null, entries: null },
+      mediaLogReq: info.folder
+    }, () => this.pushAndFetch());
+  }
+
   showTab(name) {
     if (this.state.page == name) {
       return;
@@ -112,16 +136,32 @@ class Root extends React.Component {
     this.setState(s, () => this.pushAndFetch());
   }
 
-  handleDelete() {
-    this.setState({ page: 'delete' }, () => this.pushHistory());
+  handleDeleteService() {
+    this.setState({ page: 'deleteService' }, () => this.pushHistory());
   }
 
-  handleDeleteCancel() {
+  handleDeleteServiceCancel() {
     this.setState({ page: 'serviceLog' }, () => this.pushHistory());
   }
 
-  handleDeleted() {
+  handleDeletedService() {
     this.showTab('overview');
+  }
+
+  handleDeleteMedia() {
+    this.setState({ page: 'deleteMedia' }, () => this.pushHistory());
+  }
+
+  handleDeleteMediaCancel() {
+    this.setState({ page: 'mediaLog' }, () => this.pushHistory());
+  }
+
+  handleDeletedMedia() {
+    this.showTab('mediaOverview');
+  }
+
+  viewMediaItem(info) {
+    window.open('/api/mediaView?id=' + info.id, '_blank');
   }
 
   pushAndFetch() {
@@ -147,7 +187,8 @@ class Root extends React.Component {
   historyState() {
     return {
       page: this.state.page,
-      serviceLogReq: this.state.serviceLogReq
+      serviceLogReq: this.state.serviceLogReq,
+      mediaLogReq: this.state.mediaLogReq
     };
   }
 }
@@ -168,14 +209,19 @@ class Client {
     callAPI('serviceLog', { service: name }, (e, d) => this.onServiceLog(e, d));
   }
 
-  fetchFullLog() {
-    callAPI('fullLog', {}, (e, d) => this.onFullLog(e, d));
+  fetchMediaOverview() {
+    callAPI('mediaOverview', {}, (e, d) => this.onMediaOverview(e, d));
+  }
+
+  fetchMediaLog(name) {
+    callAPI('mediaLog', { folder: name }, (e, d) => this.onMediaLog(e, d));
   }
 
   close() {
     this.onOverview = function () {};
     this.onServiceLog = function () {};
-    this.onFullLog = function () {};
+    this.onMediaOverview = function () {};
+    this.onMediaLog = function () {};
   }
 }
 
@@ -269,20 +315,38 @@ function LogPane(props) {
 function LogItem(props) {
   const inf = props.info;
   let clickHandler = !props.onClick ? null : () => props.onClick(inf);
-  return React.createElement(
-    'li',
-    { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
-    React.createElement(
-      'label',
-      { className: 'service-name' },
-      inf.serviceName
-    ),
-    React.createElement(
-      'label',
-      { className: 'message' },
-      inf.message
-    )
-  );
+  if (inf.hasOwnProperty('serviceName')) {
+    return React.createElement(
+      'li',
+      { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
+      React.createElement(
+        'label',
+        { className: 'service-name' },
+        inf.serviceName
+      ),
+      React.createElement(
+        'label',
+        { className: 'message' },
+        inf.message
+      )
+    );
+  } else {
+    // TODO: display inline videos and images.
+    return React.createElement(
+      'li',
+      { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
+      React.createElement(
+        'label',
+        { className: 'service-name' },
+        inf.folder
+      ),
+      React.createElement(
+        'label',
+        { className: 'message' },
+        'Media item:' + inf.filename
+      )
+    );
+  }
 }
 function NavBar(props) {
   const page = props.page;
@@ -290,7 +354,7 @@ function NavBar(props) {
     'nav',
     null,
     React.createElement(VoidLink, { onClick: props.onOverview, name: 'Overview', cur: page === 'overview' }),
-    React.createElement(VoidLink, { onClick: props.onFullLog, name: 'Full Log', cur: page === 'fullLog' }),
+    React.createElement(VoidLink, { onClick: props.onMedia, name: 'Media', cur: page === 'mediaOverview' }),
     React.createElement(VoidLink, { onClick: props.onSettings, name: 'Settings', cur: page === 'settings' })
   );
 }
@@ -503,7 +567,7 @@ function SettingsAction(props) {
     statusLabel
   );
 }
-class DeleteService extends React.Component {
+class DeleteItem extends React.Component {
   constructor() {
     super();
     this.state = {
@@ -521,7 +585,7 @@ class DeleteService extends React.Component {
 
   handleDelete() {
     this.setState({ loading: true, error: null });
-    this._deleteReq = callAPI('delete', { service: this.props.service }, e => {
+    this._deleteReq = callAPI(this.deleteAPI(), this.queryParams(), e => {
       this._deleteReq = null;
       if (e) {
         this.setState({ loading: false, error: e });
@@ -543,7 +607,7 @@ class DeleteService extends React.Component {
         'label',
         null,
         'Delete ',
-        this.props.service,
+        this.props.name,
         '?'
       ),
       React.createElement(
@@ -568,5 +632,33 @@ class DeleteService extends React.Component {
         this.state.error
       )
     );
+  }
+
+  queryParams() {
+    throw Error('method is abstract');
+  }
+
+  deleteAPI() {
+    throw Error('method is abstract');
+  }
+}
+
+class DeleteService extends DeleteItem {
+  queryParams() {
+    return { service: this.props.name };
+  }
+
+  deleteAPI() {
+    return 'delete';
+  }
+}
+
+class DeleteMedia extends DeleteItem {
+  queryParams() {
+    return { folder: this.props.name };
+  }
+
+  deleteAPI() {
+    return 'deleteMedia';
   }
 }

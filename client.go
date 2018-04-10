@@ -31,10 +31,9 @@ type LogRecord struct {
 
 // A MediaRecord is a piece of media stored on the server.
 type MediaRecord struct {
-	Name     string `json:"name"`
+	Folder   string `json:"folder"`
 	Filename string `json:"filename"`
 	Mime     string `json:"mime"`
-	Data     []byte `json:"data"`
 	Time     int64  `json:"time"`
 	ID       int    `json:"id"`
 }
@@ -100,15 +99,15 @@ func (c *Client) Add(service, message string) (int, error) {
 }
 
 // AddMedia adds a media record and returns its ID.
-func (c *Client) AddMedia(name, filename, mime string, data []byte) (int, error) {
+func (c *Client) AddMedia(folder, filename, mime string, data []byte) (int, error) {
 	msg := map[string]interface{}{
-		"name":     name,
+		"folder":   folder,
 		"filename": filename,
 		"mime":     mime,
 		"data":     data,
 	}
 	var resID int
-	err := c.apiCall("addmedia", msg, &resID)
+	err := c.apiCall("addMedia", msg, &resID)
 	if err != nil {
 		err = errors.New("add media record: " + err.Error())
 	}

@@ -4,15 +4,18 @@ class Root extends React.Component {
     this.state = {
       page: 'overview',
       overview: {error: null, entries: null},
-      fullLog: {error: null, entries: null},
+      mediaOverview: {error: null, entries: null},
       serviceLog: {error: null, entries: null},
-      serviceLogReq: ''
+      mediaLog: {error: null, entries: null},
+      serviceLogReq: '',
+      mediaLogReq: ''
     };
     if (!history.state) {
       this.replaceHistory();
     } else {
       this.state.page = history.state.page;
       this.state.serviceLogReq = history.state.serviceLogReq;
+      this.state.mediaLogReq = history.state.mediaLogReq;
     }
     this._client = null;
   }
@@ -21,7 +24,8 @@ class Root extends React.Component {
     this._client = new Client();
     this._client.onOverview = this.gotSceneData.bind(this, 'overview');
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
-    this._client.onFullLog = this.gotSceneData.bind(this, 'fullLog');
+    this._client.onMediaOverview = this.gotSceneData.bind(this, 'mediaOverview');
+    this._client.onMediaLog = this.gotSceneData.bind(this, 'mediaLog');
 
     window.onpopstate = (e) => {
       this.setState(e.state, () => this.fetchPageData());
@@ -39,7 +43,7 @@ class Root extends React.Component {
       <div>
         <NavBar page={this.state.page}
                 onOverview={() => this.showTab('overview')}
-                onFullLog={() => this.showTab('fullLog')}
+                onMedia={() => this.showTab('mediaOverview')}
                 onSettings={() => this.showTab('settings')} />
         {this.pageContent()}
       </div>
@@ -50,18 +54,27 @@ class Root extends React.Component {
     switch (this.state.page) {
     case 'overview':
       return <LogScene info={this.state.overview}
-                    onClick={(e) => this.showServiceLog(e)} />;
-    case 'fullLog':
-      return <LogScene info={this.state.fullLog} />;
+                       onClick={(e) => this.showServiceLog(e)} />;
+    case 'mediaOverview':
+      return <LogScene info={this.state.mediaOverview}
+                       onClick={(e) => this.showMediaLog(e)}/>;
     case 'serviceLog':
       return <LogScene info={this.state.serviceLog}
-                       onDelete={() => this.handleDelete()} />;
+                       onDelete={() => this.handleDeleteService()} />;
+    case 'mediaLog':
+      return <LogScene info={this.state.mediaLog}
+                       onClick={(info) => this.viewMediaItem(info)}
+                       onDelete={() => this.handleDeleteMedia()} />;
     case 'settings':
       return <Settings info={this.state.settings} />;
-    case 'delete':
-      return <DeleteService service={this.state.serviceLogReq}
-                            onCancel={() => this.handleDeleteCancel()}
-                            onDone={() => this.handleDeleted()} />;
+    case 'deleteService':
+      return <DeleteService name={this.state.serviceLogReq}
+                            onCancel={() => this.handleDeleteServiceCancel()}
+                            onDone={() => this.handleDeletedService()} />;
+    case 'deleteMedia':
+      return <DeleteMedia name={this.state.mediaLogReq}
+                          onCancel={() => this.handleDeleteMediaCancel()}
+                          onDone={() => this.handleDeletedMedia()} />;
     }
     throw new Error('unsupported page: ' + this.state.page);
   }
@@ -74,11 +87,14 @@ class Root extends React.Component {
     case 'overview':
       this._client.fetchOverview();
       break;
-    case 'fullLog':
-      this._client.fetchFullLog();
+    case 'mediaOverview':
+      this._client.fetchMediaOverview();
       break;
     case 'serviceLog':
       this._client.fetchServiceLog(this.state.serviceLogReq);
+      break;
+    case 'mediaLog':
+      this._client.fetchMediaLog(this.state.mediaLogReq);
       break;
     }
   }
@@ -101,6 +117,14 @@ class Root extends React.Component {
     }, () => this.pushAndFetch());
   }
 
+  showMediaLog(info) {
+    this.setState({
+      page: 'mediaLog',
+      mediaLog: {error: null, entries: null},
+      mediaLogReq: info.folder
+    }, () => this.pushAndFetch());
+  }
+
   showTab(name) {
     if (this.state.page == name) {
       return;
@@ -112,16 +136,32 @@ class Root extends React.Component {
     this.setState(s, () => this.pushAndFetch());
   }
 
-  handleDelete() {
-    this.setState({page: 'delete'}, () => this.pushHistory());
+  handleDeleteService() {
+    this.setState({page: 'deleteService'}, () => this.pushHistory());
   }
 
-  handleDeleteCancel() {
+  handleDeleteServiceCancel() {
     this.setState({page: 'serviceLog'}, () => this.pushHistory());
   }
 
-  handleDeleted() {
+  handleDeletedService() {
     this.showTab('overview');
+  }
+
+  handleDeleteMedia() {
+    this.setState({page: 'deleteMedia'}, () => this.pushHistory());
+  }
+
+  handleDeleteMediaCancel() {
+    this.setState({page: 'mediaLog'}, () => this.pushHistory());
+  }
+
+  handleDeletedMedia() {
+    this.showTab('mediaOverview');
+  }
+
+  viewMediaItem(info) {
+    window.open('/api/mediaView?id=' + info.id, '_blank');
   }
 
   pushAndFetch() {
@@ -147,7 +187,8 @@ class Root extends React.Component {
   historyState() {
     return {
       page: this.state.page,
-      serviceLogReq: this.state.serviceLogReq
+      serviceLogReq: this.state.serviceLogReq,
+      mediaLogReq: this.state.mediaLogReq
     };
   }
 }

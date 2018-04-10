@@ -11,14 +11,19 @@ class Client {
     callAPI('serviceLog', {service: name}, (e, d) => this.onServiceLog(e, d));
   }
 
-  fetchFullLog() {
-    callAPI('fullLog', {}, (e, d) => this.onFullLog(e, d));
+  fetchMediaOverview() {
+    callAPI('mediaOverview', {}, (e, d) => this.onMediaOverview(e, d));
+  }
+
+  fetchMediaLog(name) {
+    callAPI('mediaLog', {folder: name}, (e, d) => this.onMediaLog(e, d));
   }
 
   close() {
     this.onOverview = function() {};
     this.onServiceLog = function() {};
-    this.onFullLog = function() {};
+    this.onMediaOverview = function() {};
+    this.onMediaLog = function() {};
   }
 }
 

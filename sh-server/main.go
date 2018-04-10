@@ -49,13 +49,17 @@ func main() {
 		"/api/setprefs":      server.SetPrefsAPI,
 		"/api/chpass":        server.ChpassAPI,
 		"/api/add":           server.AddAPI,
-		"/api/addmedia":      server.AddMediaAPI,
+		"/api/addMedia":      server.AddMediaAPI,
 		"/api/overview":      server.OverviewAPI,
-		"/api/serviceLog":    server.ServiceLogAPI,
+		"/api/mediaOverview": server.MediaOverviewAPI,
 		"/api/fullLog":       server.FullLogAPI,
+		"/api/serviceLog":    server.ServiceLogAPI,
+		"/api/mediaLog":      server.MediaLogAPI,
+		"/api/mediaView":     server.MediaViewAPI,
+		"/api/delete":        server.DeleteAPI,
+		"/api/deleteMedia":   server.DeleteMediaAPI,
 		"/api/serviceStream": server.ServiceStreamAPI,
 		"/api/fullStream":    server.FullStreamAPI,
-		"/api/delete":        server.DeleteAPI,
 	}
 	for path, f := range handlers {
 		http.Handle(path, context.ClearHandler(f))
