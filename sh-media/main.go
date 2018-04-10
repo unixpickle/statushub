@@ -39,7 +39,7 @@ func ParseFlags() *Flags {
 	f.Filename = flag.Args()[1]
 
 	if f.UseFilename == "" {
-		f.UseFilename = f.Filename
+		f.UseFilename = filepath.Base(f.Filename)
 	}
 
 	return f
