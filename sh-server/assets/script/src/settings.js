@@ -12,7 +12,8 @@ class Settings extends React.Component {
         confirm: ''
       },
       settingsFields: {
-        logSize: 0
+        logSize: 0,
+        mediaCache: 0
       },
     };
     this._passwordReq = null;
@@ -49,11 +50,15 @@ class Settings extends React.Component {
 
   handleSaveSettings() {
     const fields = Object.assign({}, this.state.settingsFields);
-    if ('string' === typeof fields.logSize) {
-      fields.logSize = parseInt(fields.logSize);
-      if (isNaN(fields.logSize)) {
-        this.setState({settings: {loading: false, error: 'invalid log size'}});
-        return;
+    var keys = Object.keys(fields);
+    for (var i = 0; i < keys.length; ++i) {
+      if ('string' === typeof fields[keys[i]]) {
+        var str = fields[keys[i]];
+        fields[keys[i]] = parseInt(str);
+        if (isNaN(fields[keys[i]])) {
+          this.setState({settings: {loading: false, error: 'invalid number: ' + str}});
+          return;
+        }
       }
     }
 
@@ -117,11 +122,14 @@ class Settings extends React.Component {
 }
 
 function MainSettings(props) {
-  const handleChange = (e) => props.onChange('logSize', e.target.value);
+  const logSizeChanged = (e) => props.onChange('logSize', e.target.value);
+  const mediaCacheChanged = (e) => props.onChange('mediaCache', e.target.value);
   return (
     <div>
       <SettingsField name="Log Size" value={props.data.logSize}
-                     onChange={handleChange} />
+                     onChange={logSizeChanged} />
+      <SettingsField name="Media Cache" value={props.data.mediaCache}
+                     onChange={mediaCacheChanged} />
       <SettingsAction text="Save" info={props.status} onAction={props.onSave} />
     </div>
   );

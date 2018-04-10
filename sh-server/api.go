@@ -14,7 +14,6 @@ func (s *Server) GetPrefsAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.processAPICall(w, r, nil) {
 		return
 	}
-	// TODO: use snake_case here.
 	obj := map[string]interface{}{
 		"logSize":    s.Config.LogSize(),
 		"mediaCache": s.Config.MediaCache(),
