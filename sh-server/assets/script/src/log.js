@@ -48,12 +48,24 @@ function LogItem(props) {
       </li>
     );
   } else {
-    // TODO: display inline videos and images.
-    return (
-      <li className={props.onClick ? 'clickable' : ''} onClick={clickHandler}>
-        <label className="service-name">{inf.folder}</label>
-        <label className="message">{'Media item:' + inf.filename}</label>
-      </li>
-    );
+    if (inf.mime.startsWith('image/')) {
+      return (
+        <li className={props.onClick ? 'clickable' : ''} onClick={clickHandler}>
+          <label className="service-name">{inf.folder}</label>
+          <div className="message">
+            <img src={mediaItemURL(inf.id)} alt={inf.filename} />
+          </div>
+        </li>
+      );
+    } else {
+      return (
+        <li className={props.onClick ? 'clickable' : ''} onClick={clickHandler}>
+          <label className="service-name">{inf.folder}</label>
+          <label className="message">
+            {inf.filename} <span className="content-type">({inf.mime})</span>
+          </label>
+        </li>
+      );
+    }
   }
 }

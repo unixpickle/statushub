@@ -51,3 +51,7 @@ function callAPI(name, params, cb) {
   req.send(JSON.stringify(params));
   return req;
 }
+
+function mediaItemURL(id) {
+  return '/api/mediaView?id=' + id;
+}

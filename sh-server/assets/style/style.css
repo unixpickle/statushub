@@ -280,7 +280,8 @@
 .log-pane li.clickable:hover {
   background-color: #f0f0f0;
 }
-.log-pane li label {
+.log-pane li .service-name,
+.log-pane li .message {
   display: block;
   float: left;
   color: #555;
@@ -298,6 +299,13 @@
   box-sizing: border-box;
   padding-left: 5px;
   border-left: 1px solid #d5d5d5;
+}
+.log-pane li .message img {
+  max-width: 100%;
+  max-height: 200px;
+}
+.log-pane li .message .content-type {
+  font-style: italic;
 }
 .log-pane .action {
   text-align: center;

@@ -41,7 +41,7 @@
       }
     }
 
-    label {
+    .service-name, .message {
       display: block;
       float: left;
       color: @black-text;
@@ -61,6 +61,15 @@
       box-sizing: border-box;
       padding-left: (@log-item-padding / 2);
       border-left: 1px solid #d5d5d5;
+
+      img {
+        max-width: 100%;
+        max-height: 200px;
+      }
+
+      .content-type {
+        font-style: italic;
+      }
     }
   }
 

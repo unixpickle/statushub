@@ -161,7 +161,7 @@ class Root extends React.Component {
   }
 
   viewMediaItem(info) {
-    window.open('/api/mediaView?id=' + info.id, '_blank');
+    window.open(mediaItemURL(info.id), '_blank');
   }
 
   pushAndFetch() {
@@ -249,6 +249,10 @@ function callAPI(name, params, cb) {
   req.send(JSON.stringify(params));
   return req;
 }
+
+function mediaItemURL(id) {
+  return '/api/mediaView?id=' + id;
+}
 function Loader(props) {
   return React.createElement(
     'div',
@@ -331,21 +335,45 @@ function LogItem(props) {
       )
     );
   } else {
-    // TODO: display inline videos and images.
-    return React.createElement(
-      'li',
-      { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
-      React.createElement(
-        'label',
-        { className: 'service-name' },
-        inf.folder
-      ),
-      React.createElement(
-        'label',
-        { className: 'message' },
-        'Media item:' + inf.filename
-      )
-    );
+    if (inf.mime.startsWith('image/')) {
+      return React.createElement(
+        'li',
+        { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
+        React.createElement(
+          'label',
+          { className: 'service-name' },
+          inf.folder
+        ),
+        React.createElement(
+          'div',
+          { className: 'message' },
+          React.createElement('img', { src: mediaItemURL(inf.id), alt: inf.filename })
+        )
+      );
+    } else {
+      return React.createElement(
+        'li',
+        { className: props.onClick ? 'clickable' : '', onClick: clickHandler },
+        React.createElement(
+          'label',
+          { className: 'service-name' },
+          inf.folder
+        ),
+        React.createElement(
+          'label',
+          { className: 'message' },
+          inf.filename,
+          ' ',
+          React.createElement(
+            'span',
+            { className: 'content-type' },
+            '(',
+            inf.mime,
+            ')'
+          )
+        )
+      );
+    }
   }
 }
 function NavBar(props) {

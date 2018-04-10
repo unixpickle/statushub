@@ -161,7 +161,7 @@ class Root extends React.Component {
   }
 
   viewMediaItem(info) {
-    window.open('/api/mediaView?id=' + info.id, '_blank');
+    window.open(mediaItemURL(info.id), '_blank');
   }
 
   pushAndFetch() {
