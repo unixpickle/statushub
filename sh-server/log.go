@@ -67,7 +67,7 @@ func (l *Log) Add(service, msg string) (int, error) {
 }
 
 // AddMedia adds a media record.
-func (l *Log) AddMedia(folder, filename, mime string, data []byte) (int, error) {
+func (l *Log) AddMedia(folder, filename, mime string, data []byte, replace bool) (int, error) {
 	cacheSize := l.config.MediaCache()
 
 	// See comment in Add().
@@ -84,7 +84,13 @@ func (l *Log) AddMedia(folder, filename, mime string, data []byte) (int, error) 
 		Data: data,
 	}
 	l.curID++
-	l.media[folder] = trimMedia(append(l.media[folder], record), cacheSize)
+	media := l.media[folder]
+	if replace {
+		media = removeMedia(media, filename)
+	}
+	media = append(media, record)
+	media = trimMedia(media, cacheSize)
+	l.media[folder] = media
 	l.logLock.Unlock()
 	return record.ID, nil
 }
@@ -292,6 +298,16 @@ func trimMedia(log []MediaRecord, cacheSize int) []MediaRecord {
 			essentials.OrderedDelete(&log, 0)
 		} else {
 			break
+		}
+	}
+	return log
+}
+
+func removeMedia(log []MediaRecord, filename string) []MediaRecord {
+	for i := 0; i < len(log); i++ {
+		if log[i].Filename == filename {
+			essentials.OrderedDelete(&log, i)
+			i--
 		}
 	}
 	return log

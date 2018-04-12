@@ -99,11 +99,12 @@ func (s *Server) AddMediaAPI(w http.ResponseWriter, r *http.Request) {
 		Filename string `json:"filename"`
 		Mime     string `json:"mime"`
 		Data     []byte `json:"data"`
+		Replace  bool   `json:"replace"`
 	}
 	if !s.processAPICall(w, r, &obj) {
 		return
 	}
-	id, err := s.Log.AddMedia(obj.Folder, obj.Filename, obj.Mime, obj.Data)
+	id, err := s.Log.AddMedia(obj.Folder, obj.Filename, obj.Mime, obj.Data, obj.Replace)
 	if err != nil {
 		s.serveError(w, err.Error())
 	} else {

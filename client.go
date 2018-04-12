@@ -99,12 +99,13 @@ func (c *Client) Add(service, message string) (int, error) {
 }
 
 // AddMedia adds a media record and returns its ID.
-func (c *Client) AddMedia(folder, filename, mime string, data []byte) (int, error) {
+func (c *Client) AddMedia(folder, filename, mime string, data []byte, replace bool) (int, error) {
 	msg := map[string]interface{}{
 		"folder":   folder,
 		"filename": filename,
 		"mime":     mime,
 		"data":     data,
+		"replace":  replace,
 	}
 	var resID int
 	err := c.apiCall("addMedia", msg, &resID)

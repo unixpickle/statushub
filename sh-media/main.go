@@ -16,12 +16,14 @@ type Flags struct {
 	Name        string
 	Filename    string
 	UseFilename string
+	Replace     bool
 }
 
 func ParseFlags() *Flags {
 	f := &Flags{}
 
 	flag.StringVar(&f.UseFilename, "filename", "", "override the filename sent to the server")
+	flag.BoolVar(&f.Replace, "replace", "", "replace other files with the same name")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: sh-media [flags] <name> <file>")
 		fmt.Fprintln(os.Stderr, "")
@@ -63,5 +65,5 @@ func main() {
 		mime = "application/octet-stream"
 	}
 
-	client.AddMedia(flags.Name, flags.UseFilename, mime, contents)
+	client.AddMedia(flags.Name, flags.UseFilename, mime, contents, flags.Replace)
 }
