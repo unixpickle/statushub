@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/howeyc/gopass"
+	"github.com/unixpickle/essentials"
 )
 
 const (
@@ -24,7 +25,7 @@ func AuthCLI() (*Client, error) {
 	}
 	client, err := NewClient(rootURL)
 	if err != nil {
-		return nil, errors.New("authenticate: " + err.Error())
+		return nil, essentials.AddCtx("authenticate", err)
 	}
 	pass := os.Getenv(PassEnvVar)
 	if pass == "" {
@@ -36,7 +37,7 @@ func AuthCLI() (*Client, error) {
 		pass = string(passBytes)
 	}
 	if err := client.Login(pass); err != nil {
-		return nil, errors.New("authenticate: " + err.Error())
+		return nil, essentials.AddCtx("authenticate", err)
 	}
 	return client, nil
 }
@@ -55,7 +56,7 @@ func PrintEnvUsage(w io.Writer) error {
 	}
 	for _, msg := range messages {
 		if _, err := fmt.Fprintln(w, msg); err != nil {
-			return errors.New("print environment usage: " + err.Error())
+			return essentials.AddCtx("print environment usage", err)
 		}
 	}
 	return nil

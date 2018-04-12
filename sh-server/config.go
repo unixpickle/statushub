@@ -4,7 +4,6 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/howeyc/gopass"
+	"github.com/unixpickle/essentials"
 )
 
 // DefaultLogSize is the default capacity of the status
@@ -40,7 +40,7 @@ func LoadConfig(path string) (*Config, error) {
 		fmt.Print("New password: ")
 		pass, err := gopass.GetPasswd()
 		if err != nil {
-			return nil, errors.New("read password: " + err.Error())
+			return nil, essentials.AddCtx("read password", err)
 		}
 		res := &Config{
 			cfg: &configData{

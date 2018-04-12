@@ -52,11 +52,11 @@ type Client struct {
 func NewClient(rootURL string) (*Client, error) {
 	j, err := cookiejar.New(nil)
 	if err != nil {
-		return nil, errors.New("create cookie jar: " + err.Error())
+		return nil, essentials.AddCtx("create cookie jar", err)
 	}
 	u, err := url.Parse(rootURL)
 	if err != nil {
-		return nil, errors.New("bad root URL: " + err.Error())
+		return nil, essentials.AddCtx("bad root URL", err)
 	}
 	return &Client{
 		c: &http.Client{
@@ -93,7 +93,7 @@ func (c *Client) Add(service, message string) (int, error) {
 	var resID int
 	err := c.apiCall("add", msg, &resID)
 	if err != nil {
-		err = errors.New("add log record: " + err.Error())
+		err = essentials.AddCtx("add log record", err)
 	}
 	return resID, err
 }
@@ -110,7 +110,7 @@ func (c *Client) AddMedia(folder, filename, mime string, data []byte, replace bo
 	var resID int
 	err := c.apiCall("addMedia", msg, &resID)
 	if err != nil {
-		err = errors.New("add media record: " + err.Error())
+		err = essentials.AddCtx("add media record", err)
 	}
 	return resID, err
 }
@@ -121,7 +121,7 @@ func (c *Client) Overview() ([]LogRecord, error) {
 	msg := map[string]string{}
 	var reply []LogRecord
 	if err := c.apiCall("overview", msg, &reply); err != nil {
-		return nil, errors.New("fetch overview: " + err.Error())
+		return nil, essentials.AddCtx("fetch overview", err)
 	}
 	return reply, nil
 }
@@ -133,7 +133,7 @@ func (c *Client) ServiceLog(service string) ([]LogRecord, error) {
 	msg := map[string]string{"service": service}
 	var reply []LogRecord
 	if err := c.apiCall("serviceLog", msg, &reply); err != nil {
-		return nil, errors.New("fetch service log: " + err.Error())
+		return nil, essentials.AddCtx("fetch service log", err)
 	}
 	return reply, nil
 }
@@ -187,7 +187,7 @@ func (c *Client) apiCall(name string, msg, reply interface{}) error {
 	if reply != nil {
 		dataJSON, _ := json.Marshal(respObj.Data)
 		if err := json.Unmarshal(dataJSON, reply); err != nil {
-			return errors.New("unmarshal data: " + err.Error())
+			return essentials.AddCtx("unmarshal data", err)
 		}
 	}
 	return nil
