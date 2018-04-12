@@ -163,7 +163,8 @@ func (l *Log) FullLog() []statushub.LogRecord {
 	l.logLock.RLock()
 	res := append([]statushub.LogRecord{}, l.allRecords...)
 	l.logLock.RUnlock()
-	return reverseLog(res)
+	essentials.Reverse(res)
+	return res
 }
 
 // ServiceLog returns the log records for a particular
@@ -176,7 +177,9 @@ func (l *Log) ServiceLog(name string) ([]statushub.LogRecord, error) {
 	if !ok {
 		return nil, errors.New("unknown service: " + name)
 	}
-	return reverseLog(entries), nil
+	entries = append([]statushub.LogRecord{}, entries...)
+	essentials.Reverse(entries)
+	return entries, nil
 }
 
 // MediaLog returns the media records for a folder.
@@ -312,12 +315,4 @@ func removeMedia(log []MediaRecord, filename string) []MediaRecord {
 		}
 	}
 	return log
-}
-
-func reverseLog(log []statushub.LogRecord) []statushub.LogRecord {
-	res := make([]statushub.LogRecord, len(log))
-	for i, x := range log {
-		res[len(res)-(i+1)] = x
-	}
-	return res
 }
