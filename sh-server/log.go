@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"sort"
 	"sync"
 	"time"
 
@@ -137,7 +136,9 @@ func (l *Log) Overview() []statushub.LogRecord {
 		entries = append(entries, v[len(v)-1])
 	}
 	l.logLock.RUnlock()
-	sort.Sort(logIDSorter(entries))
+	essentials.VoodooSort(entries, func(i, j int) bool {
+		return entries[i].ID > entries[j].ID
+	})
 	return entries
 }
 
@@ -319,18 +320,4 @@ func reverseLog(log []statushub.LogRecord) []statushub.LogRecord {
 		res[len(res)-(i+1)] = x
 	}
 	return res
-}
-
-type logIDSorter []statushub.LogRecord
-
-func (l logIDSorter) Len() int {
-	return len(l)
-}
-
-func (l logIDSorter) Swap(i, j int) {
-	l[i], l[j] = l[j], l[i]
-}
-
-func (l logIDSorter) Less(i, j int) bool {
-	return l[i].ID > l[j].ID
 }
