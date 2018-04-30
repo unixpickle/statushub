@@ -23,7 +23,7 @@ func ParseFlags() *Flags {
 	f := &Flags{}
 
 	flag.StringVar(&f.UseFilename, "filename", "", "override the filename sent to the server")
-	flag.BoolVar(&f.Replace, "replace", "", "replace other files with the same name")
+	flag.BoolVar(&f.Replace, "replace", false, "replace other files with the same name")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: sh-media [flags] <name> <file>")
 		fmt.Fprintln(os.Stderr, "")
