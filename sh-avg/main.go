@@ -21,7 +21,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"math"
 	"os"
 	"regexp"
 	"sort"
@@ -32,18 +34,43 @@ import (
 	"github.com/unixpickle/statushub"
 )
 
+type AggFn func([]float64) float64
+
+var AggMethods = map[string]AggFn{
+	"mean":   computeMean,
+	"median": computeMedian,
+	"min":    computeMin,
+	"max":    computeMax,
+}
+
 func main() {
-	if len(os.Args) != 2 && len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "Usage: sh-avg <service|*> [avg size]")
+	var aggregateType string
+	flag.StringVar(&aggregateType, "type", "mean",
+		"the type of aggregate (mean, median, max, min)")
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: sh-avg [flags] <service|*> [avg size]")
+		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintln(os.Stderr, "Flags:")
+		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
 		statushub.PrintEnvUsage(os.Stderr)
+	}
+	flag.Parse()
+
+	if len(flag.Args()) != 1 && len(flag.Args()) != 2 {
+		flag.Usage()
 		os.Exit(1)
 	}
 
+	aggregateMethod, ok := AggMethods[aggregateType]
+	if !ok {
+		essentials.Die("unknown aggregate type:", aggregateType)
+	}
+
 	var avgSize int
-	if len(os.Args) == 3 {
+	if len(flag.Args()) == 2 {
 		var err error
-		avgSize, err = strconv.Atoi(os.Args[2])
+		avgSize, err = strconv.Atoi(flag.Args()[1])
 		if err != nil {
 			essentials.Die("invalid average size:", os.Args[2])
 		}
@@ -55,8 +82,8 @@ func main() {
 	}
 
 	var serviceNames []string
-	if os.Args[1] != "*" {
-		serviceNames = []string{os.Args[1]}
+	if flag.Args()[0] != "*" {
+		serviceNames = []string{flag.Args()[0]}
 	} else {
 		overview, err := client.Overview()
 		if err != nil {
@@ -79,10 +106,10 @@ func main() {
 		fields := getFields(log)
 		if avgSize == 0 {
 			for _, size := range []int{10, 20, 50} {
-				printAverages(size, fields)
+				printAggregates(size, fields, aggregateMethod)
 			}
 		} else {
-			printAverages(avgSize, fields)
+			printAggregates(avgSize, fields, aggregateMethod)
 		}
 	}
 }
@@ -107,21 +134,50 @@ func getFields(log []statushub.LogRecord) map[string][]float64 {
 	return res
 }
 
-func printAverages(size int, fields map[string][]float64) {
-	sums := map[string]float64{}
-	counts := map[string]int{}
+func printAggregates(size int, fields map[string][]float64, aggFn AggFn) {
+	aggs := map[string]float64{}
 	fieldNames := []string{}
 	for key, vals := range fields {
 		fieldNames = append(fieldNames, key)
-		for i := 0; i < len(vals) && i < size; i++ {
-			sums[key] += vals[i]
-			counts[key]++
-		}
+		aggs[key] = aggFn(vals)
 	}
 	sort.Strings(fieldNames)
 	fmt.Printf("size %d:", size)
 	for _, name := range fieldNames {
-		fmt.Printf(" %s=%f", name, sums[name]/float64(counts[name]))
+		fmt.Printf(" %s=%f", name, aggs[name])
 	}
 	fmt.Println()
+}
+
+func computeMean(values []float64) float64 {
+	sum := 0.0
+	for _, val := range values {
+		sum += val
+	}
+	return sum / float64(len(values))
+}
+
+func computeMedian(values []float64) float64 {
+	sort.Float64s(values)
+	if len(values)%2 != 0 {
+		return values[len(values)/2]
+	} else {
+		return (values[len(values)/2-1] + values[len(values)/2]) / 2
+	}
+}
+
+func computeMin(values []float64) float64 {
+	res := values[0]
+	for _, val := range values[1:] {
+		res = math.Min(res, val)
+	}
+	return res
+}
+
+func computeMax(values []float64) float64 {
+	res := values[0]
+	for _, val := range values[1:] {
+		res = math.Max(res, val)
+	}
+	return res
 }
