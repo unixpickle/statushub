@@ -139,6 +139,9 @@ func printAggregates(size int, fields map[string][]float64, aggFn AggFn) {
 	fieldNames := []string{}
 	for key, vals := range fields {
 		fieldNames = append(fieldNames, key)
+		if len(vals) > size {
+			vals = vals[:size]
+		}
 		aggs[key] = aggFn(vals)
 	}
 	sort.Strings(fieldNames)
