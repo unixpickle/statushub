@@ -21,6 +21,7 @@ type Flags struct {
 	ServiceName   string
 	AddTimestamps bool
 	Timezone      string
+	LineInterval  int
 }
 
 func ParseFlags() (f *Flags, args []string) {
@@ -28,6 +29,7 @@ func ParseFlags() (f *Flags, args []string) {
 
 	flag.BoolVar(&f.AddTimestamps, "timestamps", false, "prepend timestamps to lines")
 	flag.StringVar(&f.Timezone, "timezone", "", "show timestamps in an IANA timezone")
+	flag.IntVar(&f.LineInterval, "interval", 1, "interval at which to log lines")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: sh-log [flags] <service> [cmd [args...]]")
 		fmt.Fprintln(os.Stderr, "")
@@ -106,7 +108,7 @@ func logCommand(c *statushub.Client, f *Flags, name string, args ...string) {
 
 func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 	r := bufio.NewReader(in)
-	for {
+	for i := 0; true; i++ {
 		line, err := r.ReadString('\n')
 		if len(line) == 0 && err != nil {
 			return
@@ -117,8 +119,10 @@ func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 		if f.AddTimestamps {
 			line = addTimestamp(f.Timezone, line)
 		}
-		if _, err := c.Add(f.ServiceName, line); err != nil {
-			fmt.Fprintln(os.Stderr, "Failed to log:", err)
+		if i%f.LineInterval == 0 {
+			if _, err := c.Add(f.ServiceName, line); err != nil {
+				fmt.Fprintln(os.Stderr, "Failed to log:", err)
+			}
 		}
 		fmt.Fprintln(echo, line)
 	}
