@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"sync"
 	"time"
 
@@ -22,6 +23,7 @@ type Flags struct {
 	AddTimestamps bool
 	Timezone      string
 	LineInterval  int
+	Filter        string
 }
 
 func ParseFlags() (f *Flags, args []string) {
@@ -30,6 +32,7 @@ func ParseFlags() (f *Flags, args []string) {
 	flag.BoolVar(&f.AddTimestamps, "timestamps", false, "prepend timestamps to lines")
 	flag.StringVar(&f.Timezone, "timezone", "", "show timestamps in an IANA timezone")
 	flag.IntVar(&f.LineInterval, "interval", 1, "interval at which to log lines")
+	flag.StringVar(&f.Filter, "filter", "", "regular expression to filter for log messages")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: sh-log [flags] <service> [cmd [args...]]")
 		fmt.Fprintln(os.Stderr, "")
@@ -108,7 +111,12 @@ func logCommand(c *statushub.Client, f *Flags, name string, args ...string) {
 
 func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 	r := bufio.NewReader(in)
-	for i := 0; true; i++ {
+
+	expr, err := regexp.Compile(f.Filter)
+	essentials.Must(err)
+
+	lineIndex := 0
+	for {
 		line, err := r.ReadString('\n')
 		if len(line) == 0 && err != nil {
 			return
@@ -119,10 +127,13 @@ func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 		if f.AddTimestamps {
 			line = addTimestamp(f.Timezone, line)
 		}
-		if i%f.LineInterval == 0 {
-			if _, err := c.Add(f.ServiceName, line); err != nil {
-				fmt.Fprintln(os.Stderr, "Failed to log:", err)
+		if expr.MatchString(line) {
+			if lineIndex%f.LineInterval == 0 {
+				if _, err := c.Add(f.ServiceName, line); err != nil {
+					fmt.Fprintln(os.Stderr, "Failed to log:", err)
+				}
 			}
+			lineIndex++
 		}
 		fmt.Fprintln(echo, line)
 	}
