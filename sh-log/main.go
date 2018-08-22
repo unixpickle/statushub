@@ -2,54 +2,16 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"os/signal"
-	"regexp"
 	"sync"
-	"time"
 
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/statushub"
 )
-
-const LogTimeFormat = "2006/01/02 15:04:05"
-
-type Flags struct {
-	ServiceName   string
-	AddTimestamps bool
-	Timezone      string
-	LineInterval  int
-	Filter        string
-}
-
-func ParseFlags() (f *Flags, args []string) {
-	f = &Flags{}
-
-	flag.BoolVar(&f.AddTimestamps, "timestamps", false, "prepend timestamps to lines")
-	flag.StringVar(&f.Timezone, "timezone", "", "show timestamps in an IANA timezone")
-	flag.IntVar(&f.LineInterval, "interval", 1, "interval at which to log lines")
-	flag.StringVar(&f.Filter, "filter", "", "regular expression to filter for log messages")
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: sh-log [flags] <service> [cmd [args...]]")
-		fmt.Fprintln(os.Stderr, "")
-		flag.PrintDefaults()
-		fmt.Fprintln(os.Stderr, "")
-		statushub.PrintEnvUsage(os.Stderr)
-	}
-
-	flag.Parse()
-	if len(flag.Args()) == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
-	f.ServiceName = flag.Args()[0]
-
-	return f, flag.Args()[1:]
-}
 
 func main() {
 	flags, args := ParseFlags()
@@ -59,14 +21,53 @@ func main() {
 		essentials.Die("Failed to create client:", err)
 	}
 
+	pipelineIn, pipelineOut := Pipeline(flags)
+
+	submitDone := make(chan struct{})
+	go func() {
+		submitMessages(client, flags, pipelineOut)
+		close(submitDone)
+	}()
+
 	if len(args) == 0 {
-		logAndEcho(client, flags, os.Stdin, os.Stdout)
+		linesToMessages(pipelineIn, flags, os.Stdin, os.Stdout)
 	} else {
-		logCommand(client, flags, args[0], args[1:]...)
+		logCommand(pipelineIn, flags, args[0], args[1:]...)
+	}
+
+	close(pipelineIn)
+	<-submitDone
+}
+
+func submitMessages(c *statushub.Client, f *Flags, messages <-chan *Message) {
+	for {
+		msg, ok := <-messages
+		if !ok {
+			return
+		}
+		msgs := []*Message{msg}
+	UnbufferLoop:
+		for i := 0; i < f.Buffer-1; i++ {
+			select {
+			case newMsg := <-messages:
+				msgs = append(msgs, newMsg)
+			default:
+				break UnbufferLoop
+			}
+		}
+		// TODO: add all unfiltered messages in batch.
+		for _, msg := range msgs {
+			if !msg.Filtered {
+				if _, err := c.Add(f.ServiceName, msg.Line); err != nil {
+					fmt.Fprintln(os.Stderr, "Failed to log:", err)
+				}
+			}
+			fmt.Fprintln(msg.Dest, msg.Line)
+		}
 	}
 }
 
-func logCommand(c *statushub.Client, f *Flags, name string, args ...string) {
+func logCommand(msgCh chan<- *Message, f *Flags, name string, args ...string) {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
 	pipe1, err := cmd.StdoutPipe()
@@ -84,7 +85,7 @@ func logCommand(c *statushub.Client, f *Flags, name string, args ...string) {
 		wg.Add(1)
 		go func(pipe io.Reader, out io.Writer) {
 			defer wg.Done()
-			logAndEcho(c, f, pipe, out)
+			linesToMessages(msgCh, f, pipe, out)
 		}(pipe, outs[i])
 	}
 
@@ -109,13 +110,8 @@ func logCommand(c *statushub.Client, f *Flags, name string, args ...string) {
 	cmd.Wait()
 }
 
-func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
+func linesToMessages(msgCh chan<- *Message, f *Flags, in io.Reader, echo io.Writer) {
 	r := bufio.NewReader(in)
-
-	expr, err := regexp.Compile(f.Filter)
-	essentials.Must(err)
-
-	lineIndex := 0
 	for {
 		line, err := r.ReadString('\n')
 		if len(line) == 0 && err != nil {
@@ -124,29 +120,9 @@ func logAndEcho(c *statushub.Client, f *Flags, in io.Reader, echo io.Writer) {
 		if line[len(line)-1] == '\n' {
 			line = line[:len(line)-1]
 		}
-		if f.AddTimestamps {
-			line = addTimestamp(f.Timezone, line)
+		msgCh <- &Message{
+			Line: line,
+			Dest: echo,
 		}
-		if expr.MatchString(line) {
-			if lineIndex%f.LineInterval == 0 {
-				if _, err := c.Add(f.ServiceName, line); err != nil {
-					fmt.Fprintln(os.Stderr, "Failed to log:", err)
-				}
-			}
-			lineIndex++
-		}
-		fmt.Fprintln(echo, line)
 	}
-}
-
-func addTimestamp(timezone, line string) string {
-	t := time.Now()
-	if timezone != "" {
-		location, err := time.LoadLocation(timezone)
-		if err != nil {
-			essentials.Die("Invalid timezone:", err)
-		}
-		t = t.In(location)
-	}
-	return t.Format(LogTimeFormat) + " " + line
 }
