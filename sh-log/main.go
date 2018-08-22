@@ -23,20 +23,16 @@ func main() {
 
 	pipelineIn, pipelineOut := Pipeline(flags)
 
-	submitDone := make(chan struct{})
 	go func() {
-		submitMessages(client, flags, pipelineOut)
-		close(submitDone)
+		defer close(pipelineIn)
+		if len(args) == 0 {
+			linesToMessages(pipelineIn, flags, os.Stdin, os.Stdout)
+		} else {
+			logCommand(pipelineIn, flags, args[0], args[1:]...)
+		}
 	}()
 
-	if len(args) == 0 {
-		linesToMessages(pipelineIn, flags, os.Stdin, os.Stdout)
-	} else {
-		logCommand(pipelineIn, flags, args[0], args[1:]...)
-	}
-
-	close(pipelineIn)
-	<-submitDone
+	submitMessages(client, flags, pipelineOut)
 }
 
 func submitMessages(c *statushub.Client, f *Flags, messages <-chan *Message) {

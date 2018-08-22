@@ -77,7 +77,7 @@ func TakeInterval(messages <-chan *Message, interval int) <-chan *Message {
 	var lineIndex int
 	return pipelineStage(messages, func(msg *Message) {
 		if !msg.Filtered {
-			msg.Filtered = (lineIndex%interval == 0)
+			msg.Filtered = (lineIndex%interval != 0)
 			lineIndex++
 		}
 	})
