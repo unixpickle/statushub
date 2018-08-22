@@ -45,7 +45,10 @@ func submitMessages(c *statushub.Client, f *Flags, messages <-chan *Message) {
 	UnbufferLoop:
 		for i := 0; i < f.Buffer-1; i++ {
 			select {
-			case newMsg := <-messages:
+			case newMsg, ok := <-messages:
+				if !ok {
+					break UnbufferLoop
+				}
 				msgs = append(msgs, newMsg)
 			default:
 				break UnbufferLoop
