@@ -98,6 +98,21 @@ func (c *Client) Add(service, message string) (int, error) {
 	return resID, err
 }
 
+// AddBatch adds a batch of log records and returns their
+// IDs.
+func (c *Client) AddBatch(service string, messages []string) ([]int, error) {
+	msg := map[string]interface{}{
+		"service":  service,
+		"messages": messages,
+	}
+	var resIDs []int
+	err := c.apiCall("addBatch", msg, &resIDs)
+	if err != nil {
+		err = essentials.AddCtx("add log records", err)
+	}
+	return resIDs, err
+}
+
 // AddMedia adds a media record and returns its ID.
 func (c *Client) AddMedia(folder, filename, mime string, data []byte, replace bool) (int, error) {
 	msg := map[string]interface{}{

@@ -38,6 +38,28 @@ func Pipeline(f *Flags) (chan<- *Message, <-chan *Message) {
 	return input, output
 }
 
+// ReadBuffer reads at least one message and up to the
+// entire buffer of messages.
+func ReadBuffer(msgs <-chan *Message) []*Message {
+	msg, ok := <-msgs
+	if !ok {
+		return nil
+	}
+	res := []*Message{msg}
+	for i := 0; i < cap(msgs)-1; i++ {
+		select {
+		case newMsg, ok := <-msgs:
+			if !ok {
+				return res
+			}
+			res = append(res, newMsg)
+		default:
+			return res
+		}
+	}
+	return res
+}
+
 // AddTimestamps is a pipeline stage that adds timestamps
 // to the beginning of every log message.
 func AddTimestamps(messages <-chan *Message, timezone string) <-chan *Message {

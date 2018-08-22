@@ -37,33 +37,27 @@ func main() {
 
 func submitMessages(c *statushub.Client, f *Flags, messages <-chan *Message) {
 	for {
-		msg, ok := <-messages
-		if !ok {
+		msgs := ReadBuffer(messages)
+		if len(msgs) == 0 {
 			return
 		}
-		msgs := []*Message{msg}
-	UnbufferLoop:
-		for i := 0; i < f.Buffer-1; i++ {
-			select {
-			case newMsg, ok := <-messages:
-				if !ok {
-					break UnbufferLoop
-				}
-				msgs = append(msgs, newMsg)
-			default:
-				break UnbufferLoop
-			}
+		if _, err := c.AddBatch(f.ServiceName, unfilteredMessages(msgs)); err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to log:", err)
 		}
-		// TODO: add all unfiltered messages in batch.
 		for _, msg := range msgs {
-			if !msg.Filtered {
-				if _, err := c.Add(f.ServiceName, msg.Line); err != nil {
-					fmt.Fprintln(os.Stderr, "Failed to log:", err)
-				}
-			}
 			fmt.Fprintln(msg.Dest, msg.Line)
 		}
 	}
+}
+
+func unfilteredMessages(msgs []*Message) []string {
+	res := []string{}
+	for _, msg := range msgs {
+		if !msg.Filtered {
+			res = append(res, msg.Line)
+		}
+	}
+	return res
 }
 
 func logCommand(msgCh chan<- *Message, f *Flags, name string, args ...string) {
