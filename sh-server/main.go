@@ -49,6 +49,7 @@ func main() {
 		"/api/setprefs":      server.SetPrefsAPI,
 		"/api/chpass":        server.ChpassAPI,
 		"/api/add":           server.AddAPI,
+		"/api/addBatch":      server.AddBatchAPI,
 		"/api/addMedia":      server.AddMediaAPI,
 		"/api/overview":      server.OverviewAPI,
 		"/api/mediaOverview": server.MediaOverviewAPI,

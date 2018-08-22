@@ -84,11 +84,28 @@ func (s *Server) AddAPI(w http.ResponseWriter, r *http.Request) {
 	if !s.processAPICall(w, r, &obj) {
 		return
 	}
-	id, err := s.Log.Add(obj.Service, obj.Message)
+	ids, err := s.Log.Add(obj.Service, []string{obj.Message})
 	if err != nil {
 		s.serveError(w, err.Error())
 	} else {
-		s.servePayload(w, id)
+		s.servePayload(w, ids[0])
+	}
+}
+
+// AddBatchAPI serves the API for adding many log entries.
+func (s *Server) AddBatchAPI(w http.ResponseWriter, r *http.Request) {
+	var obj struct {
+		Service  string   `json:"service"`
+		Messages []string `json:"messages"`
+	}
+	if !s.processAPICall(w, r, &obj) {
+		return
+	}
+	ids, err := s.Log.Add(obj.Service, obj.Messages)
+	if err != nil {
+		s.serveError(w, err.Error())
+	} else {
+		s.servePayload(w, ids)
 	}
 }
 

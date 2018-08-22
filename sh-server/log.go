@@ -38,9 +38,10 @@ func NewLog(cfg *Config) *Log {
 	}
 }
 
-// Add adds a log record to the log.
-func (l *Log) Add(service, msg string) (int, error) {
+// Add adds records to the log.
+func (l *Log) Add(service string, msgs []string) ([]int, error) {
 	ls := l.config.LogSize()
+	ids := []int{}
 
 	// Technically, there is a possible scenario when
 	// LogSizeUpdated() is called while we are right here,
@@ -51,18 +52,23 @@ func (l *Log) Add(service, msg string) (int, error) {
 	// while holding the log lock.
 
 	l.logLock.Lock()
-	record := statushub.LogRecord{
-		Service: service,
-		Message: msg,
-		Time:    time.Now().Unix(),
-		ID:      l.curID,
+	for _, msg := range msgs {
+		record := statushub.LogRecord{
+			Service: service,
+			Message: msg,
+			Time:    time.Now().Unix(),
+			ID:      l.curID,
+		}
+		l.curID++
+		l.allRecords = append(l.allRecords, record)
+		l.perService[service] = append(l.perService[service], record)
+		ids = append(ids, record.ID)
 	}
-	l.curID++
-	l.allRecords = trimLog(append(l.allRecords, record), ls)
-	l.perService[service] = trimLog(append(l.perService[service], record), ls)
+	l.allRecords = trimLog(l.allRecords, ls)
+	l.perService[service] = trimLog(l.perService[service], ls)
 	l.wakeListeners(service)
 	l.logLock.Unlock()
-	return record.ID, nil
+	return ids, nil
 }
 
 // AddMedia adds a media record.
