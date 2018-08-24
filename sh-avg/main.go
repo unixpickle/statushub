@@ -23,25 +23,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
 	"os"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/statushub"
 )
-
-type AggFn func([]float64) float64
-
-var AggMethods = map[string]AggFn{
-	"mean":   computeMean,
-	"median": computeMedian,
-	"min":    computeMin,
-	"max":    computeMax,
-}
 
 func main() {
 	var aggregateType string
@@ -81,18 +70,8 @@ func main() {
 		essentials.Die(err)
 	}
 
-	var serviceNames []string
-	if flag.Args()[0] != "*" {
-		serviceNames = []string{flag.Args()[0]}
-	} else {
-		overview, err := client.Overview()
-		if err != nil {
-			essentials.Die(err)
-		}
-		for _, x := range overview {
-			serviceNames = append(serviceNames, x.Service)
-		}
-	}
+	serviceNames, err := ServiceNames(client, flag.Args()[0])
+	essentials.Must(err)
 
 	for _, name := range serviceNames {
 		if len(serviceNames) > 1 {
@@ -103,18 +82,23 @@ func main() {
 			essentials.Die(err)
 		}
 
-		fields := getFields(log)
+		fields := ExtractFields(log)
 		if avgSize == 0 {
 			for _, size := range []int{10, 20, 50} {
-				printAggregates(size, fields, aggregateMethod)
+				fmt.Println(AggSummary(size, fields, aggregateMethod))
 			}
 		} else {
-			printAggregates(avgSize, fields, aggregateMethod)
+			fmt.Println(AggSummary(avgSize, fields, aggregateMethod))
 		}
 	}
 }
 
-func getFields(log []statushub.LogRecord) map[string][]float64 {
+// ExtractFields finds fields of the form "key=value" in a
+// list of log messages.
+//
+// Returns a map from field names to a full history of the
+// values for that field.
+func ExtractFields(log []statushub.LogRecord) map[string][]float64 {
 	exp := regexp.MustCompile(`^([a-zA-Z_0-9\-]*)=([0-9\.\-e]*)$`)
 	res := map[string][]float64{}
 	for _, record := range log {
@@ -134,53 +118,18 @@ func getFields(log []statushub.LogRecord) map[string][]float64 {
 	return res
 }
 
-func printAggregates(size int, fields map[string][]float64, aggFn AggFn) {
-	aggs := map[string]float64{}
-	fieldNames := []string{}
-	for key, vals := range fields {
-		fieldNames = append(fieldNames, key)
-		if len(vals) > size {
-			vals = vals[:size]
-		}
-		aggs[key] = aggFn(vals)
+// ServiceNames gets service names matching an expression.
+func ServiceNames(client *statushub.Client, expr string) ([]string, error) {
+	if expr != "*" {
+		return []string{expr}, nil
 	}
-	sort.Strings(fieldNames)
-	fmt.Printf("size %d:", size)
-	for _, name := range fieldNames {
-		fmt.Printf(" %s=%f", name, aggs[name])
+	var serviceNames []string
+	overview, err := client.Overview()
+	if err != nil {
+		return nil, err
 	}
-	fmt.Println()
-}
-
-func computeMean(values []float64) float64 {
-	sum := 0.0
-	for _, val := range values {
-		sum += val
+	for _, x := range overview {
+		serviceNames = append(serviceNames, x.Service)
 	}
-	return sum / float64(len(values))
-}
-
-func computeMedian(values []float64) float64 {
-	sort.Float64s(values)
-	if len(values)%2 != 0 {
-		return values[len(values)/2]
-	} else {
-		return (values[len(values)/2-1] + values[len(values)/2]) / 2
-	}
-}
-
-func computeMin(values []float64) float64 {
-	res := values[0]
-	for _, val := range values[1:] {
-		res = math.Min(res, val)
-	}
-	return res
-}
-
-func computeMax(values []float64) float64 {
-	res := values[0]
-	for _, val := range values[1:] {
-		res = math.Max(res, val)
-	}
-	return res
+	return serviceNames, nil
 }
