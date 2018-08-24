@@ -21,76 +21,73 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/statushub"
 )
 
+var DefaultAvgSizes = []int{10, 20, 50}
+
 func main() {
-	var aggregateType string
-	flag.StringVar(&aggregateType, "type", "mean",
-		"the type of aggregate (mean, median, max, min)")
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: sh-avg [flags] <service|*> [avg size]")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "Flags:")
-		flag.PrintDefaults()
-		fmt.Fprintln(os.Stderr, "")
-		statushub.PrintEnvUsage(os.Stderr)
-	}
-	flag.Parse()
-
-	if len(flag.Args()) != 1 && len(flag.Args()) != 2 {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	aggregateMethod, ok := AggMethods[aggregateType]
-	if !ok {
-		essentials.Die("unknown aggregate type:", aggregateType)
-	}
-
-	var avgSize int
-	if len(flag.Args()) == 2 {
-		var err error
-		avgSize, err = strconv.Atoi(flag.Args()[1])
-		if err != nil {
-			essentials.Die("invalid average size:", os.Args[2])
-		}
-	}
+	flags := ParseFlags()
 
 	client, err := statushub.AuthCLI()
 	if err != nil {
 		essentials.Die(err)
 	}
 
-	serviceNames, err := ServiceNames(client, flag.Args()[0])
+	serviceNames, err := ServiceNames(client, flags.ServiceName)
 	essentials.Must(err)
 
+	for {
+		err := ProduceAggregates(client, flags, serviceNames)
+		if flags.LoopInterval == 0 {
+			essentials.Must(err)
+			break
+		}
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		time.Sleep(flags.LoopInterval)
+	}
+}
+
+// ProduceAggregates computes aggregates for the services
+// and outputs the results to the appropriate places.
+func ProduceAggregates(c *statushub.Client, f *Flags, serviceNames []string) error {
+	printLine := func(message string) {
+		fmt.Println(message)
+		if f.LogName != "" {
+			if _, err := c.Add(f.LogName, message); err != nil {
+				fmt.Fprintln(os.Stderr, "Failed to log:", err)
+			}
+		}
+	}
 	for _, name := range serviceNames {
 		if len(serviceNames) > 1 {
-			fmt.Println("Service:", name)
+			printLine("Service: " + name)
 		}
-		log, err := client.ServiceLog(name)
+		log, err := c.ServiceLog(name)
 		if err != nil {
-			essentials.Die(err)
+			return err
 		}
 
 		fields := ExtractFields(log)
-		if avgSize == 0 {
-			for _, size := range []int{10, 20, 50} {
-				fmt.Println(AggSummary(size, fields, aggregateMethod))
+		if f.AvgSize == 0 {
+			for _, size := range DefaultAvgSizes {
+				printLine(AggSummary(size, fields, f.AggMethod))
 			}
 		} else {
-			fmt.Println(AggSummary(avgSize, fields, aggregateMethod))
+			printLine(AggSummary(f.AvgSize, fields, f.AggMethod))
 		}
 	}
+	return nil
 }
 
 // ExtractFields finds fields of the form "key=value" in a
@@ -119,12 +116,12 @@ func ExtractFields(log []statushub.LogRecord) map[string][]float64 {
 }
 
 // ServiceNames gets service names matching an expression.
-func ServiceNames(client *statushub.Client, expr string) ([]string, error) {
+func ServiceNames(c *statushub.Client, expr string) ([]string, error) {
 	if expr != "*" {
 		return []string{expr}, nil
 	}
 	var serviceNames []string
-	overview, err := client.Overview()
+	overview, err := c.Overview()
 	if err != nil {
 		return nil, err
 	}
