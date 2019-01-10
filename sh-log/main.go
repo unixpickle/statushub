@@ -21,6 +21,10 @@ func main() {
 		essentials.Die("Failed to create client:", err)
 	}
 
+	if flags.Clear {
+		client.Delete(flags.ServiceName)
+	}
+
 	pipelineIn, pipelineOut := Pipeline(flags)
 
 	go func() {

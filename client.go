@@ -153,6 +153,14 @@ func (c *Client) ServiceLog(service string) ([]LogRecord, error) {
 	return reply, nil
 }
 
+// Delete deletes the log for a service.
+func (c *Client) Delete(service string) error {
+	msg := map[string]string{"service": service}
+	var result bool
+	err := c.apiCall("delete", msg, &result)
+	return essentials.AddCtx("delete service log", err)
+}
+
 // FullStream creates a channel of live log messages.
 // The cancel chan can be closed to tell the stream to
 // terminate.

@@ -15,6 +15,7 @@ type Flags struct {
 	LineInterval  int
 	Filter        string
 	Buffer        int
+	Clear         bool
 }
 
 func ParseFlags() (f *Flags, args []string) {
@@ -25,6 +26,7 @@ func ParseFlags() (f *Flags, args []string) {
 	flag.IntVar(&f.LineInterval, "interval", 1, "interval at which to log lines")
 	flag.StringVar(&f.Filter, "filter", "", "regular expression to filter for log messages")
 	flag.IntVar(&f.Buffer, "buffer", 100, "log message buffer size")
+	flag.BoolVar(&f.Clear, "clear", false, "clear the log before starting")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: sh-log [flags] <service> [cmd [args...]]")
 		fmt.Fprintln(os.Stderr, "")
