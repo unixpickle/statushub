@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/unixpickle/essentials"
@@ -8,8 +9,8 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		essentials.Die("Usage: sh-delete <service>")
+	if len(os.Args) < 2 {
+		essentials.Die("Usage: sh-delete <service> [service ...]")
 	}
 
 	client, err := statushub.AuthCLI()
@@ -17,5 +18,9 @@ func main() {
 		essentials.Die("Failed to create client:", err)
 	}
 
-	essentials.Must(client.Delete(os.Args[1]))
+	for _, service := range os.Args[1:] {
+		if err := client.Delete(service); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}
 }
