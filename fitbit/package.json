@@ -1,0 +1,25 @@
+{
+  "devDependencies": {
+    "@fitbit/sdk": "~5.0.0"
+  },
+  "fitbit": {
+    "appUUID": "6762488a-1cb8-41c2-bdaf-a3456df20b3a",
+    "appType": "app",
+    "appDisplayName": "StatusHub",
+    "iconFile": "resources/icon.png",
+    "wipeColor": "#607d8b",
+    "requestedPermissions": [
+      "access_internet"
+    ],
+    "buildTargets": [
+      "atlas",
+      "vulcan"
+    ],
+    "i18n": {
+      "en-US": {
+        "name": "StatusHub"
+      }
+    },
+    "defaultLanguage": "en-US"
+  }
+}

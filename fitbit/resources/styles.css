@@ -1,0 +1,11 @@
+#status {
+  font-size: 18;
+  font-family: System-Regular;
+  font-weight: regular;
+  x: 10;
+  y: 50%;
+  width: 95%;
+  height: 100%;
+  fill: white;
+  text-length: 64;
+}
