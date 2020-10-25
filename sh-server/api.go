@@ -275,8 +275,22 @@ func (s *Server) FullStreamAPI(w http.ResponseWriter, r *http.Request) {
 func (s *Server) processAPICall(w http.ResponseWriter, r *http.Request, inData interface{}) bool {
 	disableCache(w)
 	if !s.authenticated(r) {
-		s.serveError(w, "not authenticated")
-		return false
+		if pass := r.FormValue("password"); pass != "" {
+			// Allow authentication without a cookie.
+			limitID := s.LimitNamer.Name(r)
+			if s.LoginLimit.Get(limitID) < 0 {
+				s.serveError(w, "too many login attempts")
+				return false
+			}
+			if !s.Config.CheckPass(pass) {
+				s.LoginLimit.Decrement(limitID)
+				s.serveError(w, "incorrect password")
+				return false
+			}
+		} else {
+			s.serveError(w, "not authenticated")
+			return false
+		}
 	}
 	if inData != nil {
 		contents, err := ioutil.ReadAll(r.Body)
