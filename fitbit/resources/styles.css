@@ -9,3 +9,19 @@
   fill: white;
   text-length: 64;
 }
+
+#refresh-button {
+  fill: #65bcd4;
+}
+
+.application-fill {
+  fill: fb-yellow;
+}
+
+.foreground-fill {
+  fill: fb-white;
+}
+
+.background-fill {
+  fill: fb-black;
+}
