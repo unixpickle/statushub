@@ -6,17 +6,23 @@
   </defs>
 
   <use href="#scrollview">
-    <use href="#scrollview-item" display="flexible-height">
+    <use href="#scrollview-item" height="2000">
       <use href="#text-button" id="refresh-button" y="0">
         <set href="#text" attributeName="text-buffer" to="REFRESH" />
       </use>
 
-      <use id="result-box" href="#body-textarea" x="0" y="100" width="100%">
-        <set href="text" attributeName="text-buffer" to="Lorem" />
-        <set href="text" attributeName="text-length" to="2000" />
-      </use>
+      <textarea class="result-box" fill="white" x="25" y="100" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
+      <textarea class="result-box" fill="white" x="25" y="$" width="100%-50" font-size="25" height="120" rows="3" text-length="150" />
     </use>
     <use href="#scrollview-item" height="100" />
   </use>
-  
+
 </svg>

@@ -1,27 +1,50 @@
 import document from "document";
 import * as messaging from "messaging";
 
-const resultBox = document.getElementById('result-box');
-resultBox.text = 'Tap refresh.';
-
+const resultBoxes = document.getElementsByClassName('result-box');
 const refreshButton = document.getElementById('refresh-button');
-refreshButton.addEventListener('click', (evt) => {
-  if (messaging.peerSocket.readyState === messaging.peerSocket.OPEN) {
-    resultBox.text = 'Loading...';
+
+function clearResults() {
+  resultBoxes.forEach((x) => x.text = '');
+}
+
+function showResults(results) {
+  clearResults();
+  results.forEach((x, i) => {
+    if (i < resultBoxes.length) {
+      resultBoxes[i].text = x;
+    }
+  });
+}
+
+function showMessage(msg) {
+  clearResults();
+  resultBoxes[0].text = msg;
+}
+
+function initialize() {
+  showMessage('Not connected to peer.');
+
+  refreshButton.addEventListener('click', (evt) => {
+    if (messaging.peerSocket.readyState === messaging.peerSocket.OPEN) {
+      showMessage('Loading...');
+      messaging.peerSocket.send({});
+    } else {
+      showMessage('Not connected to peer.');
+    }
+  });
+
+  messaging.peerSocket.addEventListener("open", (evt) => {
     messaging.peerSocket.send({});
-  } else {
-    resultBox.text = 'Not connected to peer.';
-  }
-});
+  });
 
-messaging.peerSocket.addEventListener("open", (evt) => {
-  messaging.peerSocket.send({});
-});
+  messaging.peerSocket.addEventListener("message", (evt) => {
+    if (evt.data['error']) {
+      showMessage(evt.data['error']);
+    } else {
+      showResults(evt.data['data']);
+    }
+  });
+}
 
-messaging.peerSocket.addEventListener("message", (evt) => {
-  if (evt.data['error']) {
-    resultBox.text = evt.data['error'];
-  } else {
-    resultBox.text = evt.data['data'];
-  }
-});
+initialize();

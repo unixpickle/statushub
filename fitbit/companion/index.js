@@ -24,12 +24,11 @@ function makeRequest() {
     if (data['error']) {
       messaging.peerSocket.send({error: data['error']});
     } else {
-      let buffer = '';
+      let rows = [];
       data['data'].forEach((x) => {
-        buffer += x['serviceName'] + '\n';
-        buffer += x['message'] + '\n---------------\n';
+        rows.push(x['serviceName'] + '\n' + x['message']);
       });
-      messaging.peerSocket.send({data: buffer});
+      messaging.peerSocket.send({data: rows});
     }
   }).catch((err) => {
     messaging.peerSocket.send({error: 'Login error: ' + err});
