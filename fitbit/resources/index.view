@@ -5,19 +5,32 @@
         <set href="#text" attributeName="text-buffer" to="REFRESH" />
       </use>
 
-      <textarea class="result-box" fill="white" x="25" y="100" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
-      <textarea class="result-box" fill="white" x="25" y="$+15" width="100%-50" font-size="25" height="130" rows="4" text-length="150" />
+      <textarea class="result-box-title" x="25" y="100" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
+      <textarea class="result-box-title" x="25" y="$+15" width="100%-50" height="30" rows="1" text-length="100" />
+      <textarea class="result-box" x="25" y="$" width="100%-50" height="100" rows="3" text-length="150" />
     </use>
     <use href="#scrollview-item" height="100" />
   </use>

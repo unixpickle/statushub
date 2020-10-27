@@ -2,17 +2,20 @@ import document from "document";
 import * as messaging from "messaging";
 
 const resultBoxes = document.getElementsByClassName('result-box');
+const resultBoxTitles = document.getElementsByClassName('result-box-title');
 const refreshButton = document.getElementById('refresh-button');
 
 function clearResults() {
   resultBoxes.forEach((x) => x.text = '');
+  resultBoxTitles.forEach((x) => x.text = '');
 }
 
 function showResults(results) {
   clearResults();
   results.forEach((x, i) => {
     if (i < resultBoxes.length) {
-      resultBoxes[i].text = x;
+      resultBoxTitles[i].text = x[0];
+      resultBoxes[i].text = x[1];
     }
   });
 }

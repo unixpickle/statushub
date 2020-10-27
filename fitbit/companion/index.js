@@ -26,7 +26,7 @@ function makeRequest() {
     } else {
       let rows = [];
       data['data'].forEach((x) => {
-        rows.push(x['serviceName'] + '\n' + x['message']);
+        rows.push([x['serviceName'], x['message']]);
       });
       messaging.peerSocket.send({data: rows});
     }
