@@ -1,108 +1,113 @@
 import document from "document";
 import * as messaging from "messaging";
 
-class OverviewPage {
-  constructor() {
-    this.resultSections = document.getElementsByClassName('result-section');
-    this.resultBoxes = document.getElementsByClassName('result-box');
-    this.resultBoxTitles = document.getElementsByClassName('result-box-title');
-    this.refreshButton = document.getElementById('refresh-button');
+class ResultRow {
+  constructor(elements) {
+    this.elements = elements;
+  }
 
+  show(result) {
+    if ('string' === typeof result) {
+      this.elements[this.elements.length - 1].text = result;
+    } else {
+      result.forEach((x, i) => {
+        this.elements[i].text = x;
+      });
+    }
+  }
+
+  clear() {
+    this.elements.forEach((x) => x.text = '');
+  }
+
+  static findTitledRows() {
+    const titles = document.getElementsByClassName('result-box-title');
+    const values = document.getElementsByClassName('result-box');
+    return titles.map((title, i) => new ResultRow([title, values[i]]));
+  }
+
+  static findTextRows() {
+    const values = document.getElementsByClassName('result-box');
+    return values.map((value) => new ResultRow([value]));
+  }
+}
+
+class ListPage {
+  constructor(resultRows) {
+    this.resultRows = resultRows;
+    this.refreshButton = document.getElementById('refresh-button');
     this.refreshButton.addEventListener('click', () => this.refresh());
-    this.resultSections.forEach((row, i) => {
-      const title = row.getElementsByClassName('result-box-title')[0];
+    this.showMessage('Not connected to peer.');
+  }
+
+  clear() {
+    this.resultRows.forEach((x) => x.clear());
+  }
+
+  show(results) {
+    this.clear();
+    results.forEach((x, i) => {
+      if (i < this.resultRows.length) {
+        this.resultRows[i].show(x);
+      }
+    });
+  }
+
+  showMessage(msg) {
+    this.clear();
+    this.resultRows[0].show(msg);
+  }
+
+  refresh() {
+    if (messaging.peerSocket.readyState === messaging.peerSocket.OPEN) {
+      this.showMessage('Loading...');
+      this._refresh();
+    } else {
+      this.showMessage('Not connected to peer.');
+    }
+  }
+
+  handleMessage(evt) {
+    if (evt.data['error']) {
+      this.showMessage(evt.data['error']);
+    } else {
+      this.show(evt.data['data']);
+    }
+  }
+
+  _refresh() {
+    // Override this to send a request to the peer.
+  }
+}
+
+class OverviewPage extends ListPage {
+  constructor() {
+    super(ResultRow.findTitledRows());
+
+    this.resultRows.forEach((row) => {
+      const title = row.elements[0];
       const handler = () => {
         if (title.text) {
           showServiceLog(title.text);
         }
       };
-      this.resultBoxes[i].addEventListener('click', handler);
-      this.resultBoxTitles[i].addEventListener('click', handler);
-    });
-
-    this.showMessage('Not connected to peer.');
-  }
-
-  clearResults() {
-    this.resultBoxes.forEach((x) => x.text = '');
-    this.resultBoxTitles.forEach((x) => x.text = '');
-  }
-
-  showResults(results) {
-    this.clearResults();
-    results.forEach((x, i) => {
-      if (i < this.resultBoxes.length) {
-        this.resultBoxTitles[i].text = x[0];
-        this.resultBoxes[i].text = x[1];
-      }
+      row.elements.forEach((x) => x.addEventListener('click', handler));
     });
   }
 
-  showMessage(msg) {
-    this.clearResults();
-    this.resultBoxes[0].text = msg;
-  }
-
-  refresh() {
-    if (messaging.peerSocket.readyState === messaging.peerSocket.OPEN) {
-      this.showMessage('Loading...');
-      messaging.peerSocket.send({});
-    } else {
-      this.showMessage('Not connected to peer.');
-    }
-  }
-
-  handleMessage(evt) {
-    if (evt.data['error']) {
-      this.showMessage(evt.data['error']);
-    } else {
-      this.showResults(evt.data['data']);
-    }
+  _refresh() {
+    messaging.peerSocket.send({});
   }
 }
 
-class ServiceLogPage {
+class ServiceLogPage extends ListPage {
   constructor(service) {
+    super(ResultRow.findTextRows());
     this.service = service;
-    this.container = document.getElementById('servicelog-page');
-    this.resultBoxes = this.container.getElementsByClassName('result-box');
-    this.refreshButton = this.container.getElementById('refresh-button');
-    this.refreshButton.addEventListener('click', () => this.refresh());
   }
 
-  clearResults() {
-    this.resultBoxes.forEach((x) => x.text = '');
-  }
-
-  showMessage(msg) {
-    this.clearResults();
-    this.resultBoxes[0].text = msg;
-  }
-
-  refresh() {
-    if (messaging.peerSocket.readyState === messaging.peerSocket.OPEN) {
-      this.showMessage('Loading...');
-      messaging.peerSocket.send({service: this.service});
-    } else {
-      this.showMessage('Not connected to peer.');
-    }
-  }
-
-  showResults(logEntries) {
-    this.clearResults();
-    logEntries.forEach((x, i) => {
-      if (i < this.resultBoxes.length) {
-        this.resultBoxes[i].text = x;
-      }
-    });
-  }
-
-  handleMessage(evt) {
-    if (evt.data['error']) {
-      this.showMessage(evt.data['error']);
-    } else {
-      this.showResults(evt.data['data']);
-    }
+  _refresh() {
+    messaging.peerSocket.send({service: this.service});
   }
 }
 
