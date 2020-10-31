@@ -1,6 +1,8 @@
 import * as messaging from "messaging";
 import { settingsStorage } from "settings";
 
+const MAX_ROWS = 13;
+
 messaging.peerSocket.addEventListener("message", (evt) => {
   if (evt.data['service']) {
     serviceLogRequest(evt.data['service']);    
@@ -28,14 +30,11 @@ function overviewRequest() {
     if (data['error']) {
       messaging.peerSocket.send({service: null, error: data['error']});
     } else {
-      let rows = [];
-      data['data'].forEach((x) => {
-        rows.push([x['serviceName'], x['message']]);
-      });
+      const rows = data['data'].map((x) => [x['serviceName'], x['message']]);
       messaging.peerSocket.send({service: null, data: rows});
     }
   }).catch((err) => {
-    messaging.peerSocket.send({service: null, error: 'Login error: ' + err});
+    messaging.peerSocket.send({service: null, error: 'Request error: ' + err});
   });
 }
 
@@ -52,16 +51,10 @@ function serviceLogRequest(serviceName) {
     if (data['error']) {
       messaging.peerSocket.send({service: serviceName, error: data['error']});
     } else {
-      let rows = [];
-      data['data'].forEach((x) => {
-        rows.push(x['message']);
-      });
-      if (rows.length > 13) {
-        rows = rows.slice(0, 13);
-      }
+      const rows = data['data'].slice(0, MAX_ROWS).map((x) => x['message']);
       messaging.peerSocket.send({service: serviceName, data: rows});
     }
   }).catch((err) => {
-    messaging.peerSocket.send({service: serviceName, error: 'Login error: ' + err});
+    messaging.peerSocket.send({service: serviceName, error: 'Request error: ' + err});
   });
 }
