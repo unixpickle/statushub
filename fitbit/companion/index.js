@@ -2,6 +2,7 @@ import * as messaging from "messaging";
 import { settingsStorage } from "settings";
 
 const MAX_ROWS = 13;
+const MAX_BYTES = 1000;
 
 messaging.peerSocket.addEventListener("message", (evt) => {
   if (evt.data['service']) {
@@ -52,6 +53,9 @@ function serviceLogRequest(serviceName) {
       messaging.peerSocket.send({service: serviceName, error: data['error']});
     } else {
       const rows = data['data'].slice(0, MAX_ROWS).map((x) => x['message']);
+      while (JSON.stringify(rows).length > MAX_BYTES) {
+        rows.splice(rows.length - 1);
+      }
       messaging.peerSocket.send({service: serviceName, data: rows});
     }
   }).catch((err) => {
