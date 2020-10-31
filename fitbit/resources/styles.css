@@ -1,38 +1,38 @@
 #status {
-    font-size: 18;
-    font-family: System-Regular;
-    font-weight: regular;
-    x: 10;
-    y: 50%;
-    width: 95%;
-    height: 100%;
-    fill: white;
-    text-length: 64;
-  }
+  font-size: 18;
+  font-family: System-Regular;
+  font-weight: regular;
+  x: 10;
+  y: 50%;
+  width: 95%;
+  height: 100%;
+  fill: white;
+  text-length: 64;
+}
 
-  #refresh-button {
-    fill: #65bcd4;
-  }
+#refresh-button {
+  fill: #65bcd4;
+}
 
-  .result-box-title {
-    font-size: 25;
-    font-weight: bold;
-    fill: white;
-  }
+.result-box-title {
+  font-size: 25;
+  font-weight: bold;
+  fill: white;
+}
 
-  .result-box {
-    font-size: 25;
-    fill: #aaaaaa;
-  }
+.result-box {
+  font-size: 25;
+  fill: #aaaaaa;
+}
 
-  .application-fill {
-    fill: fb-yellow;
-  }
+.application-fill {
+  fill: fb-yellow;
+}
 
-  .foreground-fill {
-    fill: fb-white;
-  }
+.foreground-fill {
+  fill: fb-white;
+}
 
-  .background-fill {
-    fill: fb-black;
-  }
+.background-fill {
+  fill: fb-black;
+}
