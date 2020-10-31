@@ -2,8 +2,8 @@ import * as messaging from "messaging";
 import { settingsStorage } from "settings";
 
 messaging.peerSocket.addEventListener("message", (evt) => {
-  if (evt['service']) {
-    serviceLogRequest(evt['service']);    
+  if (evt.data['service']) {
+    serviceLogRequest(evt.data['service']);    
   } else {
     overviewRequest();
   }
@@ -56,6 +56,9 @@ function serviceLogRequest(serviceName) {
       data['data'].forEach((x) => {
         rows.push(x['message']);
       });
+      if (rows.length > 13) {
+        rows = rows.slice(0, 13);
+      }
       messaging.peerSocket.send({service: serviceName, data: rows});
     }
   }).catch((err) => {

@@ -1,3 +1,7 @@
+.background {
+  viewport-fill: fb-black;
+}
+
 #status {
   font-size: 18;
   font-family: System-Regular;
@@ -18,11 +22,13 @@
   font-size: 25;
   font-weight: bold;
   fill: white;
+  pointer-events: visible;
 }
 
 .result-box {
   font-size: 25;
   fill: #aaaaaa;
+  pointer-events: visible;
 }
 
 .application-fill {
