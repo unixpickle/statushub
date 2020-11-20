@@ -1,16 +1,16 @@
-import * as messaging from "messaging";
+import * as messaging from "../common/bulk_messaging";
 import { settingsStorage } from "settings";
 
 const MAX_ROWS = 13;
-const MAX_BYTES = 1000;
+const MAX_BYTES = 4000;
 
-messaging.peerSocket.addEventListener("message", (evt) => {
+messaging.peerSocket.onMessage = (evt) => {
   if (evt.data['service']) {
     serviceLogRequest(evt.data['service']);    
   } else {
     overviewRequest();
   }
-});
+};
 
 function getBaseURL() {
   return JSON.parse(settingsStorage.getItem('baseurl') || '{"name":""}')["name"];

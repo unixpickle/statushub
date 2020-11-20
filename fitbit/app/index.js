@@ -1,5 +1,5 @@
 import document from "document";
-import * as messaging from "messaging";
+import * as messaging from "../common/bulk_messaging";
 
 class ResultRow {
   constructor(elements) {
@@ -59,7 +59,7 @@ class ListPage {
   }
 
   refresh() {
-    if (messaging.peerSocket.readyState === messaging.peerSocket.OPEN) {
+    if (messaging.peerSocket.isOpen()) {
       this.showMessage('Loading...');
       this._refresh();
     } else {
@@ -121,8 +121,8 @@ function showServiceLog(service) {
   });
 }
 
-messaging.peerSocket.addEventListener("open", () => overview.refresh());
-messaging.peerSocket.addEventListener("message", (evt) => {
+messaging.peerSocket.onOpen = () => overview.refresh();
+messaging.peerSocket.onMessage = (evt) => {
   if (evt.data['service']) {
     if (serviceLog && serviceLog.service === evt.data['service']) {
       serviceLog.handleMessage(evt);
@@ -130,4 +130,4 @@ messaging.peerSocket.addEventListener("message", (evt) => {
   } else {
     overview.handleMessage(evt);
   }
-});
+};

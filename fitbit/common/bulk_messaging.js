@@ -61,4 +61,4 @@ class BulkMessaging {
   }
 }
 
-export default new BulkMessaging();
+export let peerSocket = new BulkMessaging();
