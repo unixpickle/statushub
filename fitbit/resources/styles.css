@@ -15,7 +15,7 @@
 }
 
 #refresh-button {
-  fill: #65bcd4;
+  fill: fb-cyan;
 }
 
 .result-box-title {
@@ -40,5 +40,5 @@
 }
 
 .background-fill {
-  fill: fb-black;
+  fill: fb-white;
 }
