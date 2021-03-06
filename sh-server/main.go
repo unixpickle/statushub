@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/context"
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/ratelimit"
 )
@@ -21,10 +19,12 @@ const (
 func main() {
 	var port int
 	var configPath string
+	var sessionSecret string
 	var reverseProxies int
 	flag.IntVar(&port, "port", 80, "port number")
 	flag.IntVar(&reverseProxies, "proxies", 0, "number of reverse proxies")
 	flag.StringVar(&configPath, "config", "config.json", "configuration file")
+	flag.StringVar(&sessionSecret, "secret", "", "session secret")
 
 	flag.Parse()
 
@@ -33,10 +33,9 @@ func main() {
 		essentials.Die("load config:", err)
 	}
 	server := &Server{
-		Config: cfg,
-		Log:    NewLog(cfg),
-		Sessions: sessions.NewCookieStore(securecookie.GenerateRandomKey(16),
-			securecookie.GenerateRandomKey(16)),
+		Config:     cfg,
+		Log:        NewLog(cfg),
+		Sessions:   NewSessionManager(sessionSecret),
 		LoginLimit: ratelimit.NewTimeSliceLimiter(RateLimitDuration, RateLimitAttempts),
 		LimitNamer: &ratelimit.HTTPRemoteNamer{NumProxies: reverseProxies},
 	}
@@ -76,7 +75,7 @@ func main() {
 type Server struct {
 	Config     *Config
 	Log        *Log
-	Sessions   *sessions.CookieStore
+	Sessions   *SessionManager
 	LoginLimit *ratelimit.TimeSliceLimiter
 	LimitNamer *ratelimit.HTTPRemoteNamer
 }
@@ -117,25 +116,19 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login?status=failure", http.StatusSeeOther)
 		return
 	}
-	sess, _ := s.Sessions.Get(r, "sessid")
-	sess.Values["authenticated"] = true
-	sess.Save(r, w)
+	s.Sessions.CreateSession(w)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // Logout serves the logout function.
 func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	disableCache(w)
-	sess, _ := s.Sessions.Get(r, "sessid")
-	sess.Values["authenticated"] = false
-	sess.Save(r, w)
+	s.Sessions.ClearSession(w)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (s *Server) authenticated(r *http.Request) bool {
-	sess, _ := s.Sessions.Get(r, "sessid")
-	val, _ := sess.Values["authenticated"].(bool)
-	return val
+	return s.Sessions.CheckSession(r)
 }
 
 func disableCache(w http.ResponseWriter) {
