@@ -54,9 +54,10 @@ If you still want to use a UNIX pipe, be aware of the following things. First, p
 
 To develop the `sh-server` command, you will need the following:
 
- * [Node.js](https://nodejs.org)
+ * [Node.js](https://nodejs.org) and NPM (the package manager for Node)
  * [Go](https://golang.org/doc/install)
  * [go-bindata-assetfs](https://github.com/elazarl/go-bindata-assetfs)
+   * `go install github.com/elazarl/go-bindata-assetfs/...@v1.0.1`
  * Bash
 
 When you have edited an asset for `sh-server` such as a stylesheet or a script file, you must re-build the assets by running [sh-server/build.sh](sh-server/build.sh).
