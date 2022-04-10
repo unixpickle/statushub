@@ -4,8 +4,8 @@ function LogScene(props) {
     if (info.entries.length === 0) {
       return <div className="log-empty">No log entries</div>;
     } else {
-      return <LogPane items={info.entries} onClick={props.onClick}
-        onDelete={props.onDelete} />;
+      return <LogPane items={info.entries} onClick={props.onClick} onDelete={props.onDelete}
+        streaming={props.streaming} onToggleStream={props.onToggleStream} />;
     }
   } else if (info.error) {
     return (
@@ -26,10 +26,16 @@ function LogPane(props) {
   const items = props.items.map((x) => {
     return <LogItem info={x} key={x.id} onClick={props.onClick} />;
   });
-  if (props.onDelete) {
+  if (props.onDelete || props.onToggleStream) {
+    const streaming = props.streaming;
+    const streamClass = "stream-button stream-button-" + (streaming ? "active" : "paused");
+    const streamText = (streaming ? 'Stop Streaming' : 'Start Streaming');
     const action = (
       <li className="action" key="deleteaction">
-        <button className="delete-button" onClick={props.onDelete}>Delete</button>
+        {(!props.onDelete ? null
+          : <button className="delete-button" onClick={props.onDelete}>Delete</button>)}
+        {(!props.onToggleStream ? null
+          : <button className={streamClass} onClick={props.onToggleStream}>{streamText}</button>)}
       </li>
     );
     items.splice(0, 0, action);

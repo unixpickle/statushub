@@ -8,7 +8,8 @@ class Root extends React.Component {
       serviceLog: { error: null, entries: null },
       mediaLog: { error: null, entries: null },
       serviceLogReq: '',
-      mediaLogReq: ''
+      mediaLogReq: '',
+      streamingService: null
     };
     if (!history.state) {
       this.replaceHistory();
@@ -26,8 +27,20 @@ class Root extends React.Component {
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
     this._client.onMediaOverview = this.gotSceneData.bind(this, 'mediaOverview');
     this._client.onMediaLog = this.gotSceneData.bind(this, 'mediaLog');
+    this._client.onMediaLogStream = (name, data) => {
+      if (name == this.state.serviceLogReq) {
+        this.gotSceneData('serviceLog', null, data);
+      }
+    };
+    this._client.onMediaLogStreamError = (name, err) => {
+      if (name == this.state.serviceLogReq) {
+        this.setState({ streamingService: null });
+        this.gotSceneData('serviceLog', err, null);
+      }
+    };
 
     window.onpopstate = e => {
+      this.stopStreaming();
       this.setState(e.state, () => this.fetchPageData());
     };
 
@@ -60,7 +73,9 @@ class Root extends React.Component {
           onClick: e => this.showMediaLog(e) });
       case 'serviceLog':
         return React.createElement(LogScene, { info: this.state.serviceLog,
-          onDelete: () => this.handleDeleteService() });
+          onDelete: () => this.handleDeleteService(),
+          onToggleStream: () => this.handleToggleStream(),
+          streaming: this.state.streamingService === this.state.serviceLogReq });
       case 'mediaLog':
         return React.createElement(LogScene, { info: this.state.mediaLog,
           onClick: info => this.viewMediaItem(info),
@@ -110,14 +125,17 @@ class Root extends React.Component {
   }
 
   showServiceLog(info) {
+    this.stopStreaming();
     this.setState({
       page: 'serviceLog',
       serviceLog: { error: null, entries: null },
-      serviceLogReq: info.serviceName
+      serviceLogReq: info.serviceName,
+      streamingService: null
     }, () => this.pushAndFetch());
   }
 
   showMediaLog(info) {
+    this.stopStreaming();
     this.setState({
       page: 'mediaLog',
       mediaLog: { error: null, entries: null },
@@ -129,6 +147,7 @@ class Root extends React.Component {
     if (this.state.page == name) {
       return;
     }
+    this.stopStreaming();
     var s = { page: name };
     if (name !== 'settings') {
       s[name] = { error: null, entries: null };
@@ -148,6 +167,14 @@ class Root extends React.Component {
     this.showTab('overview');
   }
 
+  handleToggleStream() {
+    if (this.state.streamingService == this.state.serviceLogReq) {
+      this.stopStreaming();
+    } else {
+      this.startStreaming();
+    }
+  }
+
   handleDeleteMedia() {
     this.setState({ page: 'deleteMedia' }, () => this.pushHistory());
   }
@@ -162,6 +189,16 @@ class Root extends React.Component {
 
   viewMediaItem(info) {
     window.open(mediaItemURL(info.id), '_blank');
+  }
+
+  stopStreaming() {
+    this._client.stopStreaming();
+    this.setState({ streamingService: null });
+  }
+
+  startStreaming() {
+    this._client.startStreaming(this.state.serviceLogReq);
+    this.setState({ streamingService: this.state.serviceLogReq });
   }
 
   pushAndFetch() {
@@ -199,6 +236,7 @@ window.addEventListener('load', function () {
 class Client {
   constructor() {
     this.close();
+    this._stream = null;
   }
 
   fetchOverview() {
@@ -217,16 +255,38 @@ class Client {
     callAPI('mediaLog', { folder: name }, (e, d) => this.onMediaLog(e, d));
   }
 
+  startStreaming(name) {
+    if (this._stream) {
+      this._stream.stop();
+      this._stream = null;
+    }
+    this._stream = new ServiceStream(name);
+    this._stream.onchange = log => this.onMediaLogStream(name, log);
+    this._stream.onerror = err => {
+      this._stream = null;
+      this.onMediaLogStreamError(name, err);
+    };
+    this._stream.start();
+  }
+
+  stopStreaming() {
+    if (this._stream) {
+      this._stream.stop();
+    }
+    this._stream = null;
+  }
+
   close() {
-    this.onOverview = function () {};
-    this.onServiceLog = function () {};
-    this.onMediaOverview = function () {};
-    this.onMediaLog = function () {};
+    this.onOverview = () => null;
+    this.onServiceLog = () => null;
+    this.onMediaOverview = () => null;
+    this.onMediaLog = () => null;
+    this.onMediaLogStream = () => null;
+    this.onMediaLogStreamError = () => null;
   }
 }
 
 function callAPI(name, params, cb) {
-  let canceled = false;
   const req = new XMLHttpRequest();
   req.open('POST', '/api/' + name, true);
   req.setRequestHeader('Content-Type', 'application/json');
@@ -250,6 +310,119 @@ function callAPI(name, params, cb) {
   return req;
 }
 
+class ServiceStream {
+  constructor(serviceName) {
+    this.onchange = _ => null;
+    this.onerror = _ => null;
+    this.serviceName = serviceName;
+    this._lastLog = null;
+    this._socket = null;
+
+    this._refreshWaiting = false;
+    this._refreshNeeded = false;
+    this._pendingEvents = [];
+  }
+
+  start() {
+    const socket = new WebSocket((location.protocol == 'https' ? 'wss' : 'ws') + '://' + location.host + '/api/serviceStream?service=' + encodeURIComponent(this.serviceName));
+
+    socket.addEventListener('open', () => {
+      if (socket !== this._socket) {
+        return;
+      }
+      this._refreshLog();
+    });
+
+    let firstMsg = true;
+    socket.addEventListener('message', event => {
+      if (socket !== this._socket) {
+        return;
+      }
+      const msg = JSON.parse(event.data);
+      if (firstMsg) {
+        this._pendingEvents.push(msg);
+        this._refreshLog();
+        firstMsg = false;
+      } else if (this._refreshWaiting) {
+        this._pendingEvents.push(msg);
+      } else {
+        this._handleEvent(msg);
+      }
+    });
+
+    this._socket = socket;
+  }
+
+  stop() {
+    if (this._socket !== null) {
+      this._socket.close();
+      this._socket = null;
+      this._refreshNeeded = false;
+      this._pendingEvents = [];
+    }
+  }
+
+  log() {
+    return this._lastLog;
+  }
+
+  isRunning() {
+    return this._socket !== null;
+  }
+
+  _refreshLog() {
+    if (this._refreshWaiting) {
+      this._refreshNeeded = true;
+      return;
+    }
+    this._refreshWaiting = true;
+    this._refreshNeeded = false;
+    callAPI('serviceLog', { service: this.serviceName }, (e, d) => {
+      this._refreshWaiting = false;
+      if (!this.isRunning()) {
+        this._refreshNeeded = false;
+      } else if (e) {
+        this._refreshNeeded = false;
+        this.stop();
+        this.onerror(e);
+      } else {
+        if (this._refreshNeeded) {
+          // This refresh might contain stale data.
+          this._refreshLog();
+        } else {
+          this._handleRefresh(d);
+        }
+        while (this._pendingEvents.length) {
+          this._handleEvent(this._pendingEvents.shift());
+        }
+      }
+    });
+  }
+
+  _handleRefresh(newLog) {
+    if (this._lastLog === null) {
+      this._lastLog = newLog;
+      this.onchange(this._lastLog);
+      return;
+    }
+    const idMap = {};
+    this._lastLog.forEach(x => {
+      idMap[x.id] = true;
+    });
+    if (newLog.some(x => !idMap[x.id])) {
+      this._lastLog = newLog;
+      this.onchange(this._lastLog);
+    }
+  }
+
+  _handleEvent(data) {
+    if (!this._lastLog.some(x => x.id == data.id)) {
+      this._lastLog.unshift(data);
+      this.onchange(this._lastLog);
+    }
+  }
+}
+
 function mediaItemURL(id) {
   return '/api/mediaView?id=' + id;
 }
@@ -270,8 +443,8 @@ function LogScene(props) {
         'No log entries'
       );
     } else {
-      return React.createElement(LogPane, { items: info.entries, onClick: props.onClick,
-        onDelete: props.onDelete });
+      return React.createElement(LogPane, { items: info.entries, onClick: props.onClick, onDelete: props.onDelete,
+        streaming: props.streaming, onToggleStream: props.onToggleStream });
     }
   } else if (info.error) {
     return React.createElement(
@@ -297,14 +470,22 @@ function LogPane(props) {
   const items = props.items.map(x => {
     return React.createElement(LogItem, { info: x, key: x.id, onClick: props.onClick });
   });
-  if (props.onDelete) {
+  if (props.onDelete || props.onToggleStream) {
+    const streaming = props.streaming;
+    const streamClass = "stream-button stream-button-" + (streaming ? "active" : "paused");
+    const streamText = streaming ? 'Stop Streaming' : 'Start Streaming';
     const action = React.createElement(
       'li',
       { className: 'action', key: 'deleteaction' },
-      React.createElement(
+      !props.onDelete ? null : React.createElement(
         'button',
         { className: 'delete-button', onClick: props.onDelete },
         'Delete'
+      ),
+      !props.onToggleStream ? null : React.createElement(
+        'button',
+        { className: streamClass, onClick: props.onToggleStream },
+        streamText
       )
     );
     items.splice(0, 0, action);

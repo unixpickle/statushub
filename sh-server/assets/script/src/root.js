@@ -8,7 +8,8 @@ class Root extends React.Component {
       serviceLog: { error: null, entries: null },
       mediaLog: { error: null, entries: null },
       serviceLogReq: '',
-      mediaLogReq: ''
+      mediaLogReq: '',
+      streamingService: null,
     };
     if (!history.state) {
       this.replaceHistory();
@@ -26,8 +27,20 @@ class Root extends React.Component {
     this._client.onServiceLog = this.gotSceneData.bind(this, 'serviceLog');
     this._client.onMediaOverview = this.gotSceneData.bind(this, 'mediaOverview');
     this._client.onMediaLog = this.gotSceneData.bind(this, 'mediaLog');
+    this._client.onMediaLogStream = (name, data) => {
+      if (name == this.state.serviceLogReq) {
+        this.gotSceneData('serviceLog', null, data);
+      }
+    };
+    this._client.onMediaLogStreamError = (name, err) => {
+      if (name == this.state.serviceLogReq) {
+        this.setState({ streamingService: null });
+        this.gotSceneData('serviceLog', err, null);
+      }
+    }
 
     window.onpopstate = (e) => {
+      this.stopStreaming();
       this.setState(e.state, () => this.fetchPageData());
     };
 
@@ -60,7 +73,9 @@ class Root extends React.Component {
           onClick={(e) => this.showMediaLog(e)} />;
       case 'serviceLog':
         return <LogScene info={this.state.serviceLog}
-          onDelete={() => this.handleDeleteService()} />;
+          onDelete={() => this.handleDeleteService()}
+          onToggleStream={() => this.handleToggleStream()}
+          streaming={this.state.streamingService === this.state.serviceLogReq} />;
       case 'mediaLog':
         return <LogScene info={this.state.mediaLog}
           onClick={(info) => this.viewMediaItem(info)}
@@ -110,14 +125,17 @@ class Root extends React.Component {
   }
 
   showServiceLog(info) {
+    this.stopStreaming();
     this.setState({
       page: 'serviceLog',
       serviceLog: { error: null, entries: null },
-      serviceLogReq: info.serviceName
+      serviceLogReq: info.serviceName,
+      streamingService: null,
     }, () => this.pushAndFetch());
   }
 
   showMediaLog(info) {
+    this.stopStreaming();
     this.setState({
       page: 'mediaLog',
       mediaLog: { error: null, entries: null },
@@ -129,6 +147,7 @@ class Root extends React.Component {
     if (this.state.page == name) {
       return;
     }
+    this.stopStreaming();
     var s = { page: name };
     if (name !== 'settings') {
       s[name] = { error: null, entries: null };
@@ -148,6 +167,14 @@ class Root extends React.Component {
     this.showTab('overview');
   }
 
+  handleToggleStream() {
+    if (this.state.streamingService == this.state.serviceLogReq) {
+      this.stopStreaming();
+    } else {
+      this.startStreaming();
+    }
+  }
+
   handleDeleteMedia() {
     this.setState({ page: 'deleteMedia' }, () => this.pushHistory());
   }
@@ -162,6 +189,16 @@ class Root extends React.Component {
 
   viewMediaItem(info) {
     window.open(mediaItemURL(info.id), '_blank');
+  }
+
+  stopStreaming() {
+    this._client.stopStreaming();
+    this.setState({ streamingService: null });
+  }
+
+  startStreaming() {
+    this._client.startStreaming(this.state.serviceLogReq);
+    this.setState({ streamingService: this.state.serviceLogReq });
   }
 
   pushAndFetch() {
