@@ -15,11 +15,11 @@ class DeleteItem extends React.Component {
   }
 
   handleDelete() {
-    this.setState({loading: true, error: null});
+    this.setState({ loading: true, error: null });
     this._deleteReq = callAPI(this.deleteAPI(), this.queryParams(), (e) => {
       this._deleteReq = null;
       if (e) {
-        this.setState({loading: false, error: e});
+        this.setState({ loading: false, error: e });
       } else {
         this.props.onDone();
       }
@@ -36,12 +36,12 @@ class DeleteItem extends React.Component {
         <label>Delete {this.props.name}?</label>
         <div className="buttons">
           <button className={'delete-button' + btnClass}
-                  onClick={() => this.handleDelete()}>Delete</button>
+            onClick={() => this.handleDelete()}>Delete</button>
           <button className={'cancel-button' + btnClass}
-                  onClick={() => this.props.onCancel()}>Cancel</button>
+            onClick={() => this.props.onCancel()}>Cancel</button>
         </div>
         {(!this.state.error ? null
-                            : <label className="error">{this.state.error}</label>)}
+          : <label className="error">{this.state.error}</label>)}
       </div>
     );
   }
@@ -57,7 +57,7 @@ class DeleteItem extends React.Component {
 
 class DeleteService extends DeleteItem {
   queryParams() {
-    return {service: this.props.name};
+    return { service: this.props.name };
   }
 
   deleteAPI() {
@@ -67,7 +67,7 @@ class DeleteService extends DeleteItem {
 
 class DeleteMedia extends DeleteItem {
   queryParams() {
-    return {folder: this.props.name};
+    return { folder: this.props.name };
   }
 
   deleteAPI() {

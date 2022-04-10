@@ -5,7 +5,7 @@ function LogScene(props) {
       return <div className="log-empty">No log entries</div>;
     } else {
       return <LogPane items={info.entries} onClick={props.onClick}
-                      onDelete={props.onDelete}/>;
+        onDelete={props.onDelete} />;
     }
   } else if (info.error) {
     return (

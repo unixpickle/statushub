@@ -4,8 +4,8 @@ class Settings extends React.Component {
     this.state = {
       initLoading: true,
       initError: null,
-      password: {loading: false, error: null},
-      settings: {loading: false, error: null},
+      password: { loading: false, error: null },
+      settings: { loading: false, error: null },
       passwordFields: {
         old: '',
         new: '',
@@ -41,10 +41,10 @@ class Settings extends React.Component {
   }
 
   handleChangePassword() {
-    this.setState({password: {loading: true, error: null}});
+    this.setState({ password: { loading: true, error: null } });
     this._passwordReq = callAPI('chpass', this.state.passwordFields, (err) => {
       this._passwordReq = null;
-      this.setState({password: {loading: false, error: err, done: true}});
+      this.setState({ password: { loading: false, error: err, done: true } });
     });
   }
 
@@ -56,16 +56,16 @@ class Settings extends React.Component {
         var str = fields[keys[i]];
         fields[keys[i]] = parseInt(str);
         if (isNaN(fields[keys[i]])) {
-          this.setState({settings: {loading: false, error: 'invalid number: ' + str}});
+          this.setState({ settings: { loading: false, error: 'invalid number: ' + str } });
           return;
         }
       }
     }
 
-    this.setState({settings: {loading: true, error: null}});
+    this.setState({ settings: { loading: true, error: null } });
     this._settingsReq = callAPI('setprefs', fields, (err) => {
       this._settingsReq = null;
-      this.setState({settings: {loading: false, error: err, done: true}});
+      this.setState({ settings: { loading: false, error: err, done: true } });
     });
   }
 
@@ -79,9 +79,9 @@ class Settings extends React.Component {
       const handleSet = (name, val) => this.handleSettingChanged(name, val);
       const handleSave = () => this.handleSaveSettings();
       mainSettings = <MainSettings data={this.state.settingsFields}
-                                   status={this.state.settings}
-                                   onChange={handleSet}
-                                   onSave={handleSave} />;
+        status={this.state.settings}
+        onChange={handleSet}
+        onSave={handleSave} />;
     }
     return (
       <div className="settings-pane">
@@ -90,7 +90,7 @@ class Settings extends React.Component {
           {this.passwordField('Confirm password', 'confirm')}
           {this.passwordField('New password', 'new')}
           <SettingsAction text="Change Password" info={this.state.password}
-                          onAction={() => this.handleChangePassword()}/>
+            onAction={() => this.handleChangePassword()} />
         </div>
         <div className="main-settings">
           {mainSettings}
@@ -104,20 +104,20 @@ class Settings extends React.Component {
       this.handlePasswordFieldChanged(id, e.target.value);
     };
     return <SettingsField name={name} type="password"
-                          onChange={handleChange}
-                          value={this.state.passwordFields[id]} />;
+      onChange={handleChange}
+      value={this.state.passwordFields[id]} />;
   }
 
   handlePasswordFieldChanged(id, val) {
     const f = Object.assign({}, this.state.passwordFields);
     f[id] = val;
-    this.setState({passwordFields: f});
+    this.setState({ passwordFields: f });
   }
 
   handleSettingChanged(id, val) {
     const f = Object.assign({}, this.state.settingsFields);
     f[id] = val;
-    this.setState({settingsFields: f});
+    this.setState({ settingsFields: f });
   }
 }
 
@@ -127,9 +127,9 @@ function MainSettings(props) {
   return (
     <div>
       <SettingsField name="Log Size" value={props.data.logSize}
-                     onChange={logSizeChanged} />
+        onChange={logSizeChanged} />
       <SettingsField name="Media Cache" value={props.data.mediaCache}
-                     onChange={mediaCacheChanged} />
+        onChange={mediaCacheChanged} />
       <SettingsAction text="Save" info={props.status} onAction={props.onSave} />
     </div>
   );
@@ -149,7 +149,7 @@ function SettingsAction(props) {
   let onAction = props.onAction;
   let btnClass = '';
   if (info.loading) {
-    onAction = function() {};
+    onAction = function () { };
     btnClass = 'disabled';
   }
   let statusLabel = null;

@@ -3,10 +3,10 @@ class Root extends React.Component {
     super();
     this.state = {
       page: 'overview',
-      overview: {error: null, entries: null},
-      mediaOverview: {error: null, entries: null},
-      serviceLog: {error: null, entries: null},
-      mediaLog: {error: null, entries: null},
+      overview: { error: null, entries: null },
+      mediaOverview: { error: null, entries: null },
+      serviceLog: { error: null, entries: null },
+      mediaLog: { error: null, entries: null },
       serviceLogReq: '',
       mediaLogReq: ''
     };
@@ -42,9 +42,9 @@ class Root extends React.Component {
     return (
       <div>
         <NavBar page={this.state.page}
-                onOverview={() => this.showTab('overview')}
-                onMedia={() => this.showTab('mediaOverview')}
-                onSettings={() => this.showTab('settings')} />
+          onOverview={() => this.showTab('overview')}
+          onMedia={() => this.showTab('mediaOverview')}
+          onSettings={() => this.showTab('settings')} />
         {this.pageContent()}
       </div>
     );
@@ -52,29 +52,29 @@ class Root extends React.Component {
 
   pageContent() {
     switch (this.state.page) {
-    case 'overview':
-      return <LogScene info={this.state.overview}
-                       onClick={(e) => this.showServiceLog(e)} />;
-    case 'mediaOverview':
-      return <LogScene info={this.state.mediaOverview}
-                       onClick={(e) => this.showMediaLog(e)}/>;
-    case 'serviceLog':
-      return <LogScene info={this.state.serviceLog}
-                       onDelete={() => this.handleDeleteService()} />;
-    case 'mediaLog':
-      return <LogScene info={this.state.mediaLog}
-                       onClick={(info) => this.viewMediaItem(info)}
-                       onDelete={() => this.handleDeleteMedia()} />;
-    case 'settings':
-      return <Settings info={this.state.settings} />;
-    case 'deleteService':
-      return <DeleteService name={this.state.serviceLogReq}
-                            onCancel={() => this.handleDeleteServiceCancel()}
-                            onDone={() => this.handleDeletedService()} />;
-    case 'deleteMedia':
-      return <DeleteMedia name={this.state.mediaLogReq}
-                          onCancel={() => this.handleDeleteMediaCancel()}
-                          onDone={() => this.handleDeletedMedia()} />;
+      case 'overview':
+        return <LogScene info={this.state.overview}
+          onClick={(e) => this.showServiceLog(e)} />;
+      case 'mediaOverview':
+        return <LogScene info={this.state.mediaOverview}
+          onClick={(e) => this.showMediaLog(e)} />;
+      case 'serviceLog':
+        return <LogScene info={this.state.serviceLog}
+          onDelete={() => this.handleDeleteService()} />;
+      case 'mediaLog':
+        return <LogScene info={this.state.mediaLog}
+          onClick={(info) => this.viewMediaItem(info)}
+          onDelete={() => this.handleDeleteMedia()} />;
+      case 'settings':
+        return <Settings info={this.state.settings} />;
+      case 'deleteService':
+        return <DeleteService name={this.state.serviceLogReq}
+          onCancel={() => this.handleDeleteServiceCancel()}
+          onDone={() => this.handleDeletedService()} />;
+      case 'deleteMedia':
+        return <DeleteMedia name={this.state.mediaLogReq}
+          onCancel={() => this.handleDeleteMediaCancel()}
+          onDone={() => this.handleDeletedMedia()} />;
     }
     throw new Error('unsupported page: ' + this.state.page);
   }
@@ -84,24 +84,24 @@ class Root extends React.Component {
       return;
     }
     switch (this.state.page) {
-    case 'overview':
-      this._client.fetchOverview();
-      break;
-    case 'mediaOverview':
-      this._client.fetchMediaOverview();
-      break;
-    case 'serviceLog':
-      this._client.fetchServiceLog(this.state.serviceLogReq);
-      break;
-    case 'mediaLog':
-      this._client.fetchMediaLog(this.state.mediaLogReq);
-      break;
+      case 'overview':
+        this._client.fetchOverview();
+        break;
+      case 'mediaOverview':
+        this._client.fetchMediaOverview();
+        break;
+      case 'serviceLog':
+        this._client.fetchServiceLog(this.state.serviceLogReq);
+        break;
+      case 'mediaLog':
+        this._client.fetchMediaLog(this.state.mediaLogReq);
+        break;
     }
   }
 
   gotSceneData(name, err, data) {
     const obj = {};
-    obj[name] = {error: err, entries: data};
+    obj[name] = { error: err, entries: data };
     if (name === this.state.page) {
       this.setState(obj, () => this.replaceHistory());
     } else {
@@ -112,7 +112,7 @@ class Root extends React.Component {
   showServiceLog(info) {
     this.setState({
       page: 'serviceLog',
-      serviceLog: {error: null, entries: null},
+      serviceLog: { error: null, entries: null },
       serviceLogReq: info.serviceName
     }, () => this.pushAndFetch());
   }
@@ -120,7 +120,7 @@ class Root extends React.Component {
   showMediaLog(info) {
     this.setState({
       page: 'mediaLog',
-      mediaLog: {error: null, entries: null},
+      mediaLog: { error: null, entries: null },
       mediaLogReq: info.folder
     }, () => this.pushAndFetch());
   }
@@ -129,19 +129,19 @@ class Root extends React.Component {
     if (this.state.page == name) {
       return;
     }
-    var s = {page: name};
+    var s = { page: name };
     if (name !== 'settings') {
-      s[name] = {error: null, entries: null};
+      s[name] = { error: null, entries: null };
     }
     this.setState(s, () => this.pushAndFetch());
   }
 
   handleDeleteService() {
-    this.setState({page: 'deleteService'}, () => this.pushHistory());
+    this.setState({ page: 'deleteService' }, () => this.pushHistory());
   }
 
   handleDeleteServiceCancel() {
-    this.setState({page: 'serviceLog'}, () => this.pushHistory());
+    this.setState({ page: 'serviceLog' }, () => this.pushHistory());
   }
 
   handleDeletedService() {
@@ -149,11 +149,11 @@ class Root extends React.Component {
   }
 
   handleDeleteMedia() {
-    this.setState({page: 'deleteMedia'}, () => this.pushHistory());
+    this.setState({ page: 'deleteMedia' }, () => this.pushHistory());
   }
 
   handleDeleteMediaCancel() {
-    this.setState({page: 'mediaLog'}, () => this.pushHistory());
+    this.setState({ page: 'mediaLog' }, () => this.pushHistory());
   }
 
   handleDeletedMedia() {
@@ -193,6 +193,6 @@ class Root extends React.Component {
   }
 }
 
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
   ReactDOM.render(<Root />, document.getElementById('root'));
 });

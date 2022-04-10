@@ -2,7 +2,7 @@ function NavBar(props) {
   const page = props.page;
   return (
     <nav>
-      <VoidLink onClick={props.onOverview} name="Overview" cur={page === 'overview'}/>
+      <VoidLink onClick={props.onOverview} name="Overview" cur={page === 'overview'} />
       <VoidLink onClick={props.onMedia} name="Media" cur={page === 'mediaOverview'} />
       <VoidLink onClick={props.onSettings} name="Settings" cur={page === 'settings'} />
     </nav>

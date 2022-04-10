@@ -8,7 +8,7 @@ class Client {
   }
 
   fetchServiceLog(name) {
-    callAPI('serviceLog', {service: name}, (e, d) => this.onServiceLog(e, d));
+    callAPI('serviceLog', { service: name }, (e, d) => this.onServiceLog(e, d));
   }
 
   fetchMediaOverview() {
@@ -16,21 +16,20 @@ class Client {
   }
 
   fetchMediaLog(name) {
-    callAPI('mediaLog', {folder: name}, (e, d) => this.onMediaLog(e, d));
+    callAPI('mediaLog', { folder: name }, (e, d) => this.onMediaLog(e, d));
   }
 
   close() {
-    this.onOverview = function() {};
-    this.onServiceLog = function() {};
-    this.onMediaOverview = function() {};
-    this.onMediaLog = function() {};
+    this.onOverview = function () { };
+    this.onServiceLog = function () { };
+    this.onMediaOverview = function () { };
+    this.onMediaLog = function () { };
   }
 }
 
 function callAPI(name, params, cb) {
-  let canceled = false;
   const req = new XMLHttpRequest();
-  req.open('POST', '/api/'+name, true);
+  req.open('POST', '/api/' + name, true);
   req.setRequestHeader('Content-Type', 'application/json');
   req.onreadystatechange = () => {
     if (req.readyState === 4) {
