@@ -325,7 +325,7 @@ class ServiceStream {
   }
 
   start() {
-    const socket = new WebSocket((location.protocol == 'https' ? 'wss' : 'ws') + '://' + location.host + '/api/serviceStream?service=' + encodeURIComponent(this.serviceName));
+    const socket = new WebSocket((location.protocol == 'https:' ? 'wss' : 'ws') + '://' + location.host + '/api/serviceStream?service=' + encodeURIComponent(this.serviceName));
 
     socket.addEventListener('open', () => {
       if (socket !== this._socket) {

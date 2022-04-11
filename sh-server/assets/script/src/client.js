@@ -91,7 +91,7 @@ class ServiceStream {
 
   start() {
     const socket = new WebSocket(
-      (location.protocol == 'https' ? 'wss' : 'ws') +
+      (location.protocol == 'https:' ? 'wss' : 'ws') +
       '://' +
       location.host +
       '/api/serviceStream?service=' +
