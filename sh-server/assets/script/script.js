@@ -401,9 +401,9 @@ class ServiceStream {
         } else {
           this._handleRefresh(d);
         }
-        while (this._pendingEvents.length) {
-          this._handleEvent(this._pendingEvents.shift());
-        }
+        const events = this._pendingEvents;
+        this._pendingEvents = [];
+        this._handleEvents(events);
       }
     });
   }
@@ -424,9 +424,27 @@ class ServiceStream {
     }
   }
 
-  _handleEvent(data) {
-    if (!this._lastLog.some(x => x.id == data.id)) {
+  _handleEvents(datas) {
+    let changed = false;
+    const seenIDs = {};
+    this._lastLog.forEach(x => seenIDs[x.id] = true);
+    datas.forEach(data => {
+      if (seenIDs[data.id]) {
+        return;
+      }
+      seenIDs[data.id] = true;
+      changed = true;
+      let limit = 0;
+      if (data.hasOwnProperty('limit')) {
+        limit = data['limit'];
+        delete data['limit'];
+      }
       this._lastLog.unshift(data);
+      while (limit && this._lastLog.length > limit) {
+        this._lastLog.pop();
+      }
+    });
+    if (changed) {
       this.onchange(this._lastLog);
     }
   }

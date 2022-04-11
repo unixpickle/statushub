@@ -250,7 +250,7 @@ func (s *Server) ServiceStreamAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	service := r.FormValue("service")
-	s.serveStream(w, r, func() <-chan struct{} {
+	s.serveStream(w, r, s.Config.LogSize(), func() <-chan struct{} {
 		return s.Log.WaitService(service)
 	}, func() []statushub.LogRecord {
 		res, _ := s.Log.ServiceLog(service)
@@ -265,7 +265,7 @@ func (s *Server) FullStreamAPI(w http.ResponseWriter, r *http.Request) {
 		s.serveError(w, "not authenticated")
 		return
 	}
-	s.serveStream(w, r, func() <-chan struct{} {
+	s.serveStream(w, r, 0, func() <-chan struct{} {
 		return s.Log.Wait()
 	}, func() []statushub.LogRecord {
 		return s.Log.FullLog()
@@ -322,8 +322,8 @@ func (s *Server) serveMediaLog(w http.ResponseWriter, l []statushub.MediaRecord)
 	}
 }
 
-func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait func() <-chan struct{},
-	getEntries func() []statushub.LogRecord) {
+func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, maxEntries int,
+	getWait func() <-chan struct{}, getEntries func() []statushub.LogRecord) {
 	u := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -366,7 +366,13 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, getWait fun
 				startIdx++
 			}
 			for i := startIdx; i >= 0; i-- {
-				if conn.WriteJSON(entries[i]) != nil {
+				var record struct {
+					statushub.LogRecord
+					Limit int `json:"limit,omitempty"`
+				}
+				record.LogRecord = entries[i]
+				record.Limit = maxEntries
+				if conn.WriteJSON(record) != nil {
 					return
 				}
 			}
