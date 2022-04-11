@@ -160,6 +160,7 @@ class Root extends React.Component {
   }
 
   handleDeleteServiceCancel() {
+    this.stopStreaming();
     this.setState({ page: 'serviceLog' }, () => this.pushHistory());
   }
 

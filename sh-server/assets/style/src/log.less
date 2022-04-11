@@ -74,6 +74,30 @@
   }
 
   .action {
+    position: relative;
     text-align: center;
+
+    .stream-button {
+      position: absolute;
+      right: 10px;
+      width: @button-height;
+      height: @button-height;
+      color: transparent;
+      font-size: 0;
+      border: none;
+      background-color: transparent;
+      background-size: 200% 100%;
+      cursor: pointer;
+    }
+
+    .stream-button-active {
+      background-image: url('../images/watch_button.svg');
+      background-position: -@button-height 0;
+    }
+
+    .stream-button-paused {
+      background-image: url('../images/watch_button.svg');
+      background-position: 0 0;
+    }
   }
 }
