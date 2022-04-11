@@ -330,6 +330,10 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, maxEntries 
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
 			originStr := r.Header.Get("origin")
+			if originStr == "" {
+				// Must be a command-line tool, not a web client.
+				return true
+			}
 			origin, err := url.Parse(originStr)
 			if err != nil {
 				return false
