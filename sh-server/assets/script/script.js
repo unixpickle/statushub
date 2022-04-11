@@ -347,8 +347,16 @@ class ServiceStream {
       } else if (this._refreshWaiting) {
         this._pendingEvents.push(msg);
       } else {
-        this._handleEvent(msg);
+        this._handleEvents([msg]);
       }
+    });
+
+    socket.addEventListener('close', () => {
+      if (socket !== this._socket) {
+        return;
+      }
+      this.stop();
+      this.onerror('socket closed');
     });
 
     this._socket = socket;
