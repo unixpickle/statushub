@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -327,6 +328,21 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, maxEntries 
 	u := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			originStr := r.Header.Get("origin")
+			origin, err := url.Parse(originStr)
+			if err != nil {
+				return false
+			}
+			origHost := r.Header.Get("Host")
+			if forwardHeader := r.Header.Get("X-Forwarded-Host"); forwardHeader != "" {
+				hosts := strings.Split(forwardHeader, ",")
+				if len(hosts) >= s.LimitNamer.NumProxies {
+					origHost = strings.TrimSpace(hosts[len(hosts)-s.LimitNamer.NumProxies])
+				}
+			}
+			return origin.Host == origHost
+		},
 	}
 	conn, err := u.Upgrade(w, r, nil)
 	if err != nil {
