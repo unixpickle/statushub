@@ -31,7 +31,6 @@ class Client {
       this._stream = null;
       this.onMediaLogStreamError(name, err);
     }
-    this._stream.start();
   }
 
   stopStreaming() {
@@ -76,20 +75,34 @@ function callAPI(name, params, cb) {
 }
 
 
+// Track the log messages in a service.
+//
+// After instantiating, set the onchange() and onerror() event handlers.
+// The stream will continue to pass updated logs no onchange() until stop() is
+// called or an error is encountered (passed through the onerror() event).
+//
+// When the stream is initiated, it will fetch the full service log before
+// listening for events to make sure an accurate, full log is maintained.
+// After this list is fetched, onchange() will be called.
 class ServiceStream {
   constructor(serviceName) {
     this.onchange = (_) => null;
     this.onerror = (_) => null;
     this.serviceName = serviceName;
     this._lastLog = null;
-    this._socket = null;
 
+    // This value is true while we are waiting for the full service
+    // log request to complete.
     this._refreshWaiting = false;
-    this._refreshNeeded = false;
-    this._pendingEvents = [];
-  }
 
-  start() {
+    // This value is true if a full service log request was in progress
+    // but we made another one (e.g. because the socket got a message).
+    this._refreshNeeded = false;
+
+    // Events are queued up here until the full service log request is
+    // completed.
+    this._pendingEvents = [];
+
     const socket = new WebSocket(
       (location.protocol == 'https:' ? 'wss' : 'ws') +
       '://' +
@@ -99,15 +112,14 @@ class ServiceStream {
     )
 
     socket.addEventListener('open', () => {
-      if (socket !== this._socket) {
-        return;
+      if (this.isRunning()) {
+        this._refreshLog();
       }
-      this._refreshLog();
     });
 
     let firstMsg = true;
     socket.addEventListener('message', (event) => {
-      if (socket !== this._socket) {
+      if (!this.isRunning()) {
         return;
       }
       const msg = JSON.parse(event.data);
@@ -123,7 +135,7 @@ class ServiceStream {
     });
 
     socket.addEventListener('close', () => {
-      if (socket !== this._socket) {
+      if (!this.isRunning()) {
         return;
       }
       this.stop();
@@ -133,21 +145,19 @@ class ServiceStream {
     this._socket = socket;
   }
 
+  isRunning() {
+    return this._socket !== null;
+  }
+
   stop() {
-    if (this._socket !== null) {
+    if (this.isRunning()) {
       this._socket.close();
       this._socket = null;
-      this._refreshNeeded = false;
-      this._pendingEvents = [];
     }
   }
 
   log() {
     return this._lastLog;
-  }
-
-  isRunning() {
-    return this._socket !== null;
   }
 
   _refreshLog() {
@@ -158,24 +168,23 @@ class ServiceStream {
     this._refreshWaiting = true;
     this._refreshNeeded = false;
     callAPI('serviceLog', { service: this.serviceName }, (e, d) => {
-      this._refreshWaiting = false;
       if (!this.isRunning()) {
-        this._refreshNeeded = false;
+        return;
       } else if (e) {
-        this._refreshNeeded = false;
         this.stop();
         this.onerror(e);
-      } else {
-        if (this._refreshNeeded) {
-          // This refresh might contain stale data.
-          this._refreshLog();
-        } else {
-          this._handleRefresh(d);
-        }
-        const events = this._pendingEvents;
-        this._pendingEvents = [];
-        this._handleEvents(events);
+        return;
       }
+      this._refreshWaiting = false;
+      if (this._refreshNeeded) {
+        // This refresh might contain stale data.
+        this._refreshLog();
+        return;
+      }
+      this._handleRefresh(d);
+      const events = this._pendingEvents;
+      this._pendingEvents = [];
+      this._handleEvents(events);
     });
   }
 
@@ -186,9 +195,7 @@ class ServiceStream {
       return;
     }
     const idMap = {};
-    this._lastLog.forEach((x) => {
-      idMap[x.id] = true;
-    });
+    this._lastLog.forEach((x) => idMap[x.id] = true);
     if (newLog.some((x) => !idMap[x.id])) {
       this._lastLog = newLog;
       this.onchange(this._lastLog);
