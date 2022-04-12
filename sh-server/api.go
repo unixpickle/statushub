@@ -345,6 +345,10 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, maxEntries 
 					origHost = strings.TrimSpace(hosts[len(hosts)-s.LimitNamer.NumProxies])
 				}
 			}
+			if origHost == "" {
+				// This seems to happen on localhost.
+				return true
+			}
 			return origin.Host == origHost
 		},
 	}
