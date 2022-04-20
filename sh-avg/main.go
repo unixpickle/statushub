@@ -81,10 +81,10 @@ func ProduceAggregates(c *statushub.Client, f *Flags, serviceNames []string) err
 		fields := ExtractFields(log)
 		if f.AvgSize == 0 {
 			for _, size := range DefaultAvgSizes {
-				printLine(AggSummary(size, fields, f.AggMethod))
+				printLine(AggSummary(size, fields, f))
 			}
 		} else {
-			printLine(AggSummary(f.AvgSize, fields, f.AggMethod))
+			printLine(AggSummary(f.AvgSize, fields, f))
 		}
 	}
 	return nil
@@ -106,6 +106,7 @@ func ExtractFields(log []statushub.LogRecord) map[string][]float64 {
 			}
 			fieldName := m[1]
 			fieldVal := m[2]
+
 			valFloat, err := strconv.ParseFloat(fieldVal, 64)
 			if err == nil {
 				res[fieldName] = append(res[fieldName], valFloat)

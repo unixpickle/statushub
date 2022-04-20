@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"sort"
+
+	"github.com/unixpickle/essentials"
 )
 
 type AggFn func([]float64) float64
@@ -17,7 +19,7 @@ var AggMethods = map[string]AggFn{
 
 // AggSummary produces a string that summarizes the fields
 // from some set of log messages.
-func AggSummary(size int, fields map[string][]float64, aggFn AggFn) string {
+func AggSummary(size int, fields map[string][]float64, f *Flags) string {
 	aggs := map[string]float64{}
 	fieldNames := []string{}
 	for key, vals := range fields {
@@ -25,14 +27,28 @@ func AggSummary(size int, fields map[string][]float64, aggFn AggFn) string {
 		if len(vals) > size {
 			vals = vals[:size]
 		}
-		aggs[key] = aggFn(vals)
+		aggs[key] = f.AggMethod(vals)
 	}
-	sort.Strings(fieldNames)
+	if len(f.FieldNames) > 0 {
+		fieldNames = filterNames(f.FieldNames, fieldNames)
+	} else {
+		sort.Strings(fieldNames)
+	}
 	res := fmt.Sprintf("size %d:", size)
 	for _, name := range fieldNames {
 		res += fmt.Sprintf(" %s=%f", name, aggs[name])
 	}
 	return res
+}
+
+func filterNames(fullSet, subset []string) []string {
+	newNames := make([]string, 0, len(fullSet))
+	for _, name := range fullSet {
+		if essentials.Contains(subset, name) {
+			newNames = append(newNames, name)
+		}
+	}
+	return newNames
 }
 
 func computeMean(values []float64) float64 {

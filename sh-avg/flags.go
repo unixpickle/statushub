@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/unixpickle/essentials"
@@ -17,15 +18,19 @@ type Flags struct {
 	ServiceName  string
 	LoopInterval time.Duration
 	LogName      string
+	FieldNames   []string
 }
 
 func ParseFlags() *Flags {
 	f := &Flags{}
 
 	var aggregateType string
+	var fieldNamesString string
 	flag.StringVar(&aggregateType, "type", "mean", "the type of aggregate (mean, median, max, min)")
 	flag.DurationVar(&f.LoopInterval, "loop", 0, "interval for computing averages in a loop")
 	flag.StringVar(&f.LogName, "log", "", "StatusHub service to which results are echoed")
+	flag.StringVar(&fieldNamesString, "fields", "",
+		"optional space-delimited whitelist of field names")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: sh-avg [flags] <service|*> [avg size]")
 		fmt.Fprintln(os.Stderr, "")
@@ -55,6 +60,10 @@ func ParseFlags() *Flags {
 		if err != nil {
 			essentials.Die("invalid average size:", flag.Args()[1])
 		}
+	}
+
+	if fieldNamesString != "" {
+		f.FieldNames = strings.Fields(fieldNamesString)
 	}
 
 	return f
