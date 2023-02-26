@@ -1,0 +1,9 @@
+<svg class="background">
+  <use href="#scrollview" id="logmessage-page">
+    <use href="#scrollview-item" height="100" />
+    <use href="#scrollview-item" height="2000">
+      <textarea id="log-message-box" x="25" y="0" width="100%-50" height="2000" rows="20" text-length="512" />
+    </use>
+    <use href="#scrollview-item" height="100" />
+  </use>
+</svg>

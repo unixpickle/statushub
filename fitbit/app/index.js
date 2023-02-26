@@ -104,6 +104,17 @@ class ServiceLogPage extends ListPage {
   constructor(service) {
     super(ResultRow.findTextRows());
     this.service = service;
+
+    this.resultRows.forEach((row) => {
+      const handler = () => {
+        const content = row.elements[row.elements.length - 1];
+        console.log('content text' + content.text);
+        if (content.text) {
+          showLogMessage(content.text);
+        }
+      };
+      row.elements.forEach((x) => x.addEventListener('click', handler));
+    });
   }
 
   _refresh() {
@@ -118,6 +129,13 @@ function showServiceLog(service) {
   document.location.assign('./resources/servicelog.view').then(() => {
     serviceLog = new ServiceLogPage(service);
     serviceLog.refresh();
+  });
+}
+
+function showLogMessage(text) {
+  document.location.assign('./resources/logmessage.view').then(() => {
+    console.log('showing', text);
+    document.getElementById('log-message-box').text = text;
   });
 }
 

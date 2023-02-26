@@ -31,6 +31,11 @@
   pointer-events: visible;
 }
 
+#log-message-box {
+  font-size: 25;
+  fill: #aaaaaa;
+}
+
 .application-fill {
   fill: fb-yellow;
 }
