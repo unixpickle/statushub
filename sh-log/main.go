@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/creack/pty"
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/statushub"
 )
@@ -30,9 +31,9 @@ func main() {
 	go func() {
 		defer close(pipelineIn)
 		if len(args) == 0 {
-			linesToMessages(pipelineIn, flags, os.Stdin, os.Stdout)
+			linesToMessages(pipelineIn, os.Stdin, os.Stdout)
 		} else {
-			logCommand(pipelineIn, flags, args[0], args[1:]...)
+			logCommand(pipelineIn, args[0], args[1:]...)
 		}
 	}()
 
@@ -64,33 +65,31 @@ func unfilteredMessages(msgs []*Message) []string {
 	return res
 }
 
-func logCommand(msgCh chan<- *Message, f *Flags, name string, args ...string) {
+func logCommand(msgCh chan<- *Message, name string, args ...string) {
 	cmd := exec.Command(name, args...)
-	cmd.Stdin = os.Stdin
-	pipe1, err := cmd.StdoutPipe()
-	if err != nil {
-		essentials.Die("Failed to create stdout pipe:", err)
-	}
-	pipe2, err := cmd.StderrPipe()
-	if err != nil {
-		essentials.Die("Failed to create stderr pipe:", err)
-	}
 
-	var wg sync.WaitGroup
-	outs := []io.Writer{os.Stdout, os.Stderr}
-	for i, pipe := range []io.Reader{pipe1, pipe2} {
-		wg.Add(1)
-		go func(pipe io.Reader, out io.Writer) {
-			defer wg.Done()
-			linesToMessages(msgCh, f, pipe, out)
-		}(pipe, outs[i])
-	}
-
-	if err := cmd.Start(); err != nil {
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
 		essentials.Die("Failed to start command:", err)
 	}
 
-	// Ignore our first Ctrl+C so the child can do graceful
+	defer ptmx.Close()
+	if err := disableEcho(ptmx); err != nil {
+		fmt.Fprintln(os.Stderr, "Failed to disable stdin echo:", err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(pipe io.Reader, out io.Writer) {
+		defer wg.Done()
+		linesToMessages(msgCh, pipe, out)
+	}(ptmx, os.Stdout)
+
+	go func() {
+		io.Copy(ptmx, os.Stdin)
+	}()
+
+	// Catch our first Ctrl+C so the child can do graceful
 	// shutdown if it wants to.
 	//
 	// If the child logs a ton of stuff on exit, then the
@@ -100,6 +99,7 @@ func logCommand(msgCh chan<- *Message, f *Flags, name string, args ...string) {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		<-c
+		cmd.Process.Signal(os.Interrupt)
 		signal.Stop(c)
 	}()
 
@@ -107,7 +107,7 @@ func logCommand(msgCh chan<- *Message, f *Flags, name string, args ...string) {
 	cmd.Wait()
 }
 
-func linesToMessages(msgCh chan<- *Message, f *Flags, in io.Reader, echo io.Writer) {
+func linesToMessages(msgCh chan<- *Message, in io.Reader, echo io.Writer) {
 	r := bufio.NewReader(in)
 	for {
 		line, err := r.ReadString('\n')
