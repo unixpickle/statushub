@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/creack/pty"
 	"github.com/unixpickle/essentials"
@@ -67,6 +68,7 @@ func unfilteredMessages(msgs []*Message) []string {
 
 func logCommand(msgCh chan<- *Message, name string, args ...string) {
 	cmd := exec.Command(name, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
@@ -99,6 +101,8 @@ func logCommand(msgCh chan<- *Message, name string, args ...string) {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		<-c
+		pgid := cmd.Process.Pid
+		syscall.Kill(-pgid, syscall.SIGINT)
 		cmd.Process.Signal(os.Interrupt)
 		signal.Stop(c)
 	}()
